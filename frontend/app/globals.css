@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* Colores tomados del logo de TransVelsa: azul rey de la cabina,
+   rojo de las franjas y negro/plateado del fondo y las letras. */
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-barlow), var(--font-geist-sans), sans-serif;
+
+  /* Marca (nombres existentes intactos) */
+  --color-marca: #1d4ed8;
+  --color-marca-oscuro: #1e3a8a;
+  --color-marca-claro: #dbeafe;
+  --color-marca-50: #eff4ff;
+  --color-acento: #e11d2a;
+  --color-acento-oscuro: #b91c1c;
+  --color-acento-claro: #fee2e2;
+  --color-tinta: #0a0d14;
+  --color-cabina: #000000; /* = fondo del JPEG del logo */
+  --color-cabina-2: #0b0f17;
+  --color-plata: #c0c6d0;
+
+  /* Superficies y texto */
+  --color-fondo: #f3f5f9;
+  --color-superficie: #ffffff;
+  --color-borde: #e4e8ef;
+  --color-borde-fuerte: #cfd5df;
+  --color-tenue: #5b6474; /* secundario, AA 6:1 sobre blanco */
+  --color-suave: #6b7383; /* terciario: íconos y decoración, AA 4.8:1 sobre blanco */
+
+  /* Semánticos */
+  --color-exito: #15803d;
+  --color-exito-claro: #dcfce7;
+  --color-alerta: #b45309;
+  --color-alerta-claro: #fef3c7;
+  --color-peligro: #b91c1c;
+
+  --radius-tarjeta: 0.875rem;
+  --radius-control: 0.625rem;
+
+  --shadow-tarjeta: 0 1px 2px rgb(10 13 20 / 0.04), 0 1px 3px rgb(10 13 20 / 0.06);
+  --shadow-elevada: 0 12px 32px -12px rgb(10 13 20 / 0.28), 0 2px 6px rgb(10 13 20 / 0.06);
+  --shadow-boton: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(10 13 20 / 0.2);
+
+  --animate-entrada: entrada 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-crecer: crecer 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-crecer-x: crecer-x 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-brillo: brillo 1.4s ease-in-out infinite;
+
+  @keyframes entrada {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes crecer {
+    from {
+      transform: scaleY(0);
+    }
+  }
+  @keyframes crecer-x {
+    from {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes brillo {
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-fondo font-sans text-tinta;
+  }
+  ::selection {
+    background: rgb(29 78 216 / 0.18);
+  }
+  /* Chevron uniforme en todos los <select> (SelectEstatus lo anula con bg-none + pr-6) */
+  select:not([multiple]) {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6474' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem;
+    padding-right: 2rem;
+  }
+  input[type="number"] {
+    font-variant-numeric: tabular-nums;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* Franja del logo: rojo · filo plata · azul (corte diagonal leve) */
+.franja-marca {
+  background: linear-gradient(
+    100deg,
+    var(--color-acento) 0 35%,
+    var(--color-plata) 35% 37%,
+    var(--color-marca) 37% 100%
+  );
+}
+
+/* Motivo de franjas diagonales del camión: solo en superficies negras */
+.franjas-diagonales {
+  background: repeating-linear-gradient(
+    -60deg,
+    transparent 0 14px,
+    rgb(225 29 42 / 0.9) 14px 22px,
+    transparent 22px 30px,
+    rgb(29 78 216 / 0.9) 30px 38px,
+    transparent 38px 60px
+  );
+  -webkit-mask-image: linear-gradient(to left, #000 25%, transparent);
+  mask-image: linear-gradient(to left, #000 25%, transparent);
+}
+
+/* Skeleton con brillo */
+.esqueleto {
+  position: relative;
+  overflow: hidden;
+  background: rgb(203 213 225 / 0.45);
+}
+.esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+  animation: var(--animate-brillo);
+}
+
