@@ -49,7 +49,7 @@ export function Formulario({
         const datos = new FormData(e.currentTarget);
         startTransition(() => enviar(datos));
       }}
-      className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end"
+      className="grid grid-cols-2 gap-x-2.5 gap-y-3 sm:flex sm:flex-wrap sm:items-end sm:gap-3"
     >
       {children}
       <button disabled={pendiente} className={`${claseBotonPrimario} max-sm:col-span-2`}>
@@ -68,19 +68,19 @@ export function Formulario({
       {guardado && !pendiente && (
         <p
           role="status"
-          className="col-span-2 flex items-center gap-1.5 text-sm font-medium text-exito animate-entrada sm:self-center"
+          className="col-span-2 inline-flex items-center gap-1.5 justify-self-start rounded-full bg-exito-claro px-2.5 py-1 text-sm font-medium text-green-800 ring-1 ring-green-300/60 ring-inset animate-aparecer sm:self-center"
         >
-          <Icono nombre="check" className="size-4" />
+          <Icono nombre="checkCirculo" className="size-4" />
           Guardado
         </p>
       )}
       {estado.error && (
         <p
           role="alert"
-          className="col-span-2 flex w-full items-center gap-2 rounded-control bg-acento-claro px-3 py-2 text-sm font-medium text-acento-oscuro ring-1 ring-acento/20 ring-inset"
+          className="col-span-2 flex w-full items-start gap-2 rounded-control border-l-[3px] border-l-acento bg-acento-claro px-3 py-2.5 text-sm font-medium text-red-800 ring-1 ring-acento/20 ring-inset animate-aparecer"
         >
-          <Icono nombre="alerta" className="size-4 shrink-0" />
-          {estado.error}
+          <Icono nombre="alerta" className="mt-0.5 size-4 shrink-0" />
+          <span>{estado.error}</span>
         </p>
       )}
     </form>
@@ -140,7 +140,7 @@ export function SelectEstatus({
           const nuevo = e.target.value;
           iniciar(() => accion(nuevo));
         }}
-        className={`h-7 cursor-pointer appearance-none rounded-full bg-none py-0 pr-6 pl-6 text-xs font-semibold ring-1 ring-inset transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-wait disabled:opacity-60 max-md:h-10 max-md:pr-7 max-md:pl-7 max-md:text-base ${ESTILO_ESTATUS[estatus]}`}
+        className={`h-7 cursor-pointer appearance-none rounded-full bg-none py-0 pr-6 pl-6 text-xs font-semibold shadow-control ring-1 ring-inset transition hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-wait disabled:opacity-60 max-md:h-10 max-md:pr-7 max-md:pl-7 max-md:text-base ${ESTILO_ESTATUS[estatus]}`}
       >
         {ESTATUS_VIAJE.map((e) => (
           <option key={e}>{e}</option>
@@ -171,7 +171,7 @@ export function MontoEditable({
 
   return (
     <span className="relative inline-flex items-center">
-      <span className="pointer-events-none absolute left-2.5 text-sm text-tenue">Q</span>
+      <span aria-hidden className="pointer-events-none absolute left-2.5 text-sm text-tenue">Q</span>
       <input
         type="number"
         step="0.01"
@@ -187,7 +187,7 @@ export function MontoEditable({
               setGuardado(true);
             });
         }}
-        className={`h-9 w-32 rounded-control border bg-white pr-2.5 pl-7 text-right text-base tabular-nums transition hover:border-slate-400 focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15 disabled:opacity-60 sm:text-sm ${guardado ? "border-exito ring-2 ring-exito/40" : "border-borde-fuerte"}`}
+        className={`h-11 w-32 rounded-control border bg-white pr-2.5 pl-7 text-right text-base tabular-nums shadow-control transition-[border-color,box-shadow] duration-150 hover:border-slate-400 sm:h-9 focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15 disabled:opacity-60 sm:text-sm ${guardado ? "border-exito ring-2 ring-exito/40" : "border-borde-fuerte"}`}
       />
     </span>
   );

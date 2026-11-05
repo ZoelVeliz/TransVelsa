@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, gte, lte, sum, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { io } from "next/cache";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import {
   borrarViaje,
   cambiarEstatusViaje,
@@ -10,7 +10,7 @@ import {
 import { ESTATUS_VIAJE } from "@/lib/constantes";
 import { camiones, db, pilotos, tarifas, viajes } from "@/lib/db";
 import { paginacion, param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
-import { anioSemana, formatoFecha, formatoQ, hoyISO, rangoSemana } from "@/lib/formato";
+import { anioSemana, formatoFecha, formatoQ, hoyISO, rangoSemana, cantidad } from "@/lib/formato";
 import { BORDE_ESTATUS } from "@/components/estatus";
 import { Paginacion } from "@/components/paginacion";
 import {
@@ -24,20 +24,22 @@ import {
   Cargando,
   claseBotonPrimario,
   claseBotonSecundario,
+  claseContenedorTabla,
   claseFila,
   claseInput,
   claseTabla,
+  claseTarjetaMovil,
   claseThead,
   claseTotal,
   Encabezado,
   Filtros,
   Icono,
-  Nota,
   PanelAlta,
   Pastilla,
   Placa,
   Resumen,
   Tarjeta,
+  TotalMovil,
   Vacio,
 } from "@/components/ui";
 
@@ -173,6 +175,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const faltaFlota =
     listaTarifas.length === 0 || listaPilotos.length === 0 || listaCamiones.length === 0;
 
+  const distribucion = ESTATUS_VIAJE.map((e) => ({ estatus: e, n: contar(e) }));
+
   return (
     <>
       <Resumen
@@ -196,12 +200,17 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             valor: formatoQ(total),
             icono: "billete",
             destacado: true,
-            nota: `${activos} viajes`,
+            nota: cantidad(activos, "viaje", "viajes"),
           },
         ]}
       />
 
-      <Tarjeta titulo="Nuevo viaje" icono="mas">
+      <Tarjeta
+        id="nuevo-viaje"
+        titulo="Nuevo viaje"
+        icono="mas"
+        descripcion="El flete sale del tarifario"
+      >
         {faltaFlota ? (
           <Vacio
             icono="camion"
@@ -217,11 +226,17 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         ) : (
           <PanelAlta>
             <Formulario accion={crearViaje} textoBoton="Agregar viaje">
-              <Campo etiqueta="Pedido">
-                <input name="pedido" required className={`${claseInput} w-32`} />
-              </Campo>
-              <Campo etiqueta="Fecha">
+              <Campo etiqueta="Fecha" ancho>
                 <input name="fecha" type="date" required defaultValue={hoyISO()} className={claseInput} />
+              </Campo>
+              <Campo etiqueta="Pedido">
+                <input
+                  name="pedido"
+                  required
+                  autoComplete="off"
+                  placeholder="Núm. pedido"
+                  className={`${claseInput} font-mono placeholder:font-sans sm:w-36`}
+                />
               </Campo>
               <Campo etiqueta="Placa">
                 <select name="camionId" required className={claseInput}>
@@ -230,7 +245,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   ))}
                 </select>
               </Campo>
-              <Campo etiqueta="Piloto">
+              <Campo etiqueta="Piloto" ancho>
                 <select name="pilotoId" required className={claseInput}>
                   {listaPilotos.map((p) => (
                     <option key={p.id} value={p.id}>{p.nombre}</option>
@@ -238,21 +253,21 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 </select>
               </Campo>
               <Campo etiqueta="Planta">
-                <input name="planta" required defaultValue="SM" className={`${claseInput} w-16`} />
-              </Campo>
-              <Campo etiqueta="Destino / Producto" ancho>
-                <select name="tarifaId" required className={claseInput}>
-                  {listaTarifas.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.destino} / {t.producto} — {formatoQ(t.monto)}
-                    </option>
-                  ))}
-                </select>
+                <input name="planta" required defaultValue="SM" className={`${claseInput} sm:w-20`} />
               </Campo>
               <Campo etiqueta="Estatus">
                 <select name="estatus" defaultValue="Programado" className={claseInput}>
                   {ESTATUS_VIAJE.map((e) => (
                     <option key={e}>{e}</option>
+                  ))}
+                </select>
+              </Campo>
+              <Campo etiqueta="Destino / Producto (tarifa flete)" ancho>
+                <select name="tarifaId" required className={`${claseInput} sm:min-w-80`}>
+                  {listaTarifas.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.destino} / {t.producto} — {formatoQ(t.monto)}
+                    </option>
                   ))}
                 </select>
               </Campo>
@@ -265,15 +280,24 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         titulo="Viajes"
         icono="lista"
         flush
-        extra={<Pastilla>{totalFilas}</Pastilla>}
+        descripcion="Más recientes primero"
+        extra={<Pastilla tono={totalFilas ? "marca" : "neutro"}>{totalFilas}</Pastilla>}
         acciones={
-          <Filtros action="/viajes" activos={hayFiltros} limpiar={VER_TODOS}>
+          <Filtros action="/viajes" activos={hayFiltros} limpiar={VER_TODOS} plegable>
             {pag.porPagina !== 20 && <input type="hidden" name="porPagina" value={pag.porPagina} />}
             <Campo etiqueta="Año">
               <select name="anio" defaultValue={filtro.anio ?? ""} className={claseInput}>
                 <option value="">Todos</option>
                 {anios.map((a) => (
                   <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </Campo>
+            <Campo etiqueta="Estatus">
+              <select name="estatus" defaultValue={filtro.estatus ?? ""} className={claseInput}>
+                <option value="">Todos</option>
+                {ESTATUS_VIAJE.map((e) => (
+                  <option key={e}>{e}</option>
                 ))}
               </select>
             </Campo>
@@ -293,13 +317,13 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 ))}
               </select>
             </Campo>
-            <Campo etiqueta="Fecha desde">
+            <Campo etiqueta="Fecha desde" ancho>
               <input name="fechaDesde" type="date" defaultValue={filtro.fechaDesde} className={claseInput} />
             </Campo>
-            <Campo etiqueta="Fecha hasta">
+            <Campo etiqueta="Fecha hasta" ancho>
               <input name="fechaHasta" type="date" defaultValue={filtro.fechaHasta} className={claseInput} />
             </Campo>
-            <Campo etiqueta="Piloto">
+            <Campo etiqueta="Piloto" ancho>
               <select name="piloto" defaultValue={filtro.pilotoId ?? ""} className={claseInput}>
                 <option value="">Todos</option>
                 {listaPilotos.map((p) => (
@@ -307,32 +331,21 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 ))}
               </select>
             </Campo>
-            <Campo etiqueta="Estatus">
-              <select name="estatus" defaultValue={filtro.estatus ?? ""} className={claseInput}>
-                <option value="">Todos</option>
-                {ESTATUS_VIAJE.map((e) => (
-                  <option key={e}>{e}</option>
-                ))}
-              </select>
-            </Campo>
           </Filtros>
         }
       >
-        {porDefecto && (
-          <div className="px-3 pt-3 sm:px-4 sm:pt-4">
-            <Nota>
-              Mostrando la <b>semana actual</b>: semana {actual.semana}, del{" "}
-              {formatoFecha(actual.lunes)} al {formatoFecha(actual.domingo)}.{" "}
-              <Link href={VER_TODOS} className="font-semibold underline underline-offset-2">
-                Ver todos
-              </Link>
-            </Nota>
+        {(porDefecto || totalFilas > 0) && (
+          <div className="space-y-3.5 border-b border-borde px-3 py-3 sm:px-5 sm:py-4">
+            {porDefecto && (
+              <BandaSemana semana={actual.semana} anio={actual.anio} lunes={actual.lunes} domingo={actual.domingo} />
+            )}
+            {totalFilas > 0 && <Distribucion datos={distribucion} total={totalFilas} />}
           </div>
         )}
         {filas.length === 0 ? (
           <Vacio
-            icono="filtro"
-            titulo="Sin viajes"
+            icono={porDefecto ? "calendario" : "filtro"}
+            titulo={porDefecto ? "Semana sin viajes" : "Sin viajes"}
             accion={
               hayFiltros && (
                 <Link href={VER_TODOS} className={claseBotonSecundario}>
@@ -342,74 +355,33 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             }
           >
             {porDefecto
-              ? `Todavía no hay viajes en la semana ${actual.semana}.`
-              : "No hay viajes con estos filtros."}
+              ? `Todavía no hay viajes en la semana ${actual.semana}. Agrega uno arriba o revisa semanas anteriores.`
+              : hayFiltros
+                ? "No hay viajes con estos filtros."
+                : "Todavía no hay viajes registrados."}
           </Vacio>
         ) : (
           <>
-            {/* Tarjetas hasta lg: con el sidebar, la tabla de 11 columnas no cabe antes. */}
+            {/* Tarjetas hasta lg: con el sidebar, la tabla no cabe antes. */}
             <ul className="space-y-2.5 p-3 sm:p-4 lg:hidden">
               {filas.map((f) => (
-                <li
-                  key={f.id}
-                  className={`relative overflow-hidden rounded-xl border-l-4 p-3.5 shadow-tarjeta ring-1 ring-borde ${f.estatus === "Cancelado" ? "" : "bg-superficie"} ${BORDE_ESTATUS[f.estatus]}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-sm font-semibold text-tinta">#{f.pedido}</span>
-                    <SelectEstatus
-                      estatus={f.estatus}
-                      accion={cambiarEstatusViaje.bind(null, f.id)}
-                    />
-                  </div>
-                  <p className="mt-2 font-semibold leading-snug text-tinta">
-                    {f.destino}
-                    <span className="font-normal text-tenue"> / {f.producto}</span>
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-tenue">
-                    <span className="inline-flex items-center gap-1 tabular-nums">
-                      <Icono nombre="calendario" className="size-3.5 shrink-0" />
-                      {formatoFecha(f.fecha)} · Sem. {f.semana} · {f.planta}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Icono nombre="usuario" className="size-3.5 shrink-0" />
-                      {f.piloto}
-                    </span>
-                    <Placa placa={f.placa} />
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-borde pt-2.5">
-                    <span className="text-lg font-semibold tabular-nums text-tinta">
-                      {formatoQ(f.tarifaFlete)}
-                    </span>
-                    <BotonBorrar
-                      accion={borrarViaje.bind(null, f.id)}
-                      pregunta={`¿Borrar el pedido ${f.pedido}?`}
-                    />
-                  </div>
-                </li>
+                <TarjetaViaje key={f.id} viaje={f} />
               ))}
-              <li className="relative overflow-hidden rounded-xl bg-tinta px-4 py-3 text-white">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-plata">
-                    Total filtrado (sin cancelados)
-                  </span>
-                  <span className="text-xl font-semibold tabular-nums">{formatoQ(total)}</span>
-                </div>
-                <div className="franja-marca absolute inset-x-0 bottom-0 h-0.5" />
+              <li>
+                <TotalMovil etiqueta="Total · sin cancelados" valor={formatoQ(total)} />
               </li>
             </ul>
 
-            <div className="hidden overflow-x-auto scrollbar-thin lg:block">
+            <div className={`hidden lg:block ${claseContenedorTabla}`}>
               <table className={claseTabla}>
                 <thead className={claseThead}>
                   <tr>
                     <th>Pedido</th>
-                    <th>Año</th>
-                    <th>Semana</th>
                     <th>Fecha</th>
-                    <th>Placa</th>
-                    <th>Piloto</th>
-                    <th>Planta</th>
                     <th>Destino / Producto</th>
+                    <th>Piloto</th>
+                    <th>Placa</th>
+                    <th>Planta</th>
                     <th>Estatus</th>
                     <th className="text-right">Tarifa flete</th>
                     <th>
@@ -418,51 +390,69 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filas.map((f) => (
-                    <tr
-                      key={f.id}
-                      className={`${claseFila} ${f.estatus === "Cancelado" ? "bg-slate-50 text-slate-600" : ""}`}
-                    >
-                      <td className="font-mono text-[13px] font-semibold text-tinta">{f.pedido}</td>
-                      <td className="text-tenue tabular-nums">{f.anio}</td>
-                      <td className="text-tenue tabular-nums">{f.semana}</td>
-                      <td className="whitespace-nowrap tabular-nums">{formatoFecha(f.fecha)}</td>
-                      <td>
-                        <Placa placa={f.placa} />
-                      </td>
-                      <td>
-                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                          <Avatar nombre={f.piloto} />
-                          {f.piloto}
-                        </span>
-                      </td>
-                      <td className="text-tenue tabular-nums">{f.planta}</td>
-                      <td>
-                        <span className="font-medium text-tinta">{f.destino}</span>
-                        <span className="text-tenue"> / {f.producto}</span>
-                      </td>
-                      <td>
-                        <SelectEstatus
-                          estatus={f.estatus}
-                          accion={cambiarEstatusViaje.bind(null, f.id)}
-                        />
-                      </td>
-                      <td className="text-right font-medium tabular-nums">{formatoQ(f.tarifaFlete)}</td>
-                      <td className="w-10 text-right">
-                        <BotonBorrar
-                          accion={borrarViaje.bind(null, f.id)}
-                          pregunta={`¿Borrar el pedido ${f.pedido}?`}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                  {filas.map((f) => {
+                    const cancelado = f.estatus === "Cancelado";
+                    return (
+                      <tr key={f.id} className={`${claseFila} ${cancelado ? "bg-slate-50/80 text-slate-600" : ""}`}>
+                        <td className="font-mono text-[13px] font-semibold whitespace-nowrap text-tinta">
+                          <span className="text-suave">#</span>
+                          {f.pedido}
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <span className="block font-medium tabular-nums text-tinta">{formatoFecha(f.fecha)}</span>
+                          <span className="block text-xs tabular-nums text-tenue">
+                            Sem. {f.semana} · {f.anio}
+                          </span>
+                        </td>
+                        <td className="min-w-48">
+                          <span className="block font-medium leading-snug text-tinta">{f.destino}</span>
+                          <span className="block text-xs leading-snug text-tenue">{f.producto}</span>
+                        </td>
+                        <td>
+                          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <Avatar nombre={f.piloto} />
+                            {f.piloto}
+                          </span>
+                        </td>
+                        <td>
+                          <Placa placa={f.placa} />
+                        </td>
+                        <td className="font-mono text-xs font-semibold text-tenue">{f.planta}</td>
+                        <td>
+                          <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+                        </td>
+                        <td className="text-right whitespace-nowrap">
+                          {cancelado ? (
+                            <span className="tabular-nums text-tenue line-through" title="No suma al total">
+                              {formatoQ(f.tarifaFlete)}
+                            </span>
+                          ) : (
+                            <span className="font-semibold tabular-nums text-tinta">{formatoQ(f.tarifaFlete)}</span>
+                          )}
+                        </td>
+                        <td className="w-12 text-right">
+                          <BotonBorrar
+                            accion={borrarViaje.bind(null, f.id)}
+                            pregunta={`¿Borrar el pedido ${f.pedido}?`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
                   <tr className={claseTotal}>
-                    <td colSpan={9} className="text-right">
-                      Total filtrado (sin cancelados)
+                    <td colSpan={7}>
+                      <span className="flex items-baseline justify-end gap-2">
+                        <span className="text-eyebrow font-semibold tracking-[0.1em] text-tinta uppercase">
+                          Total filtrado
+                        </span>
+                        <span className="text-xs font-normal text-tenue">
+                          {cantidad(activos, "viaje", "viajes")} · sin cancelados
+                        </span>
+                      </span>
                     </td>
-                    <td className="text-right text-base tabular-nums">{formatoQ(total)}</td>
+                    <td className="text-right text-base whitespace-nowrap tabular-nums">{formatoQ(total)}</td>
                     <td />
                   </tr>
                 </tfoot>
@@ -473,5 +463,180 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         )}
       </Tarjeta>
     </>
+  );
+}
+
+type Estatus = (typeof ESTATUS_VIAJE)[number];
+
+type FilaViaje = {
+  id: number;
+  pedido: string;
+  anio: number;
+  semana: number;
+  fecha: string;
+  placa: string;
+  piloto: string;
+  planta: string;
+  destino: string;
+  producto: string;
+  estatus: Estatus;
+  tarifaFlete: number;
+};
+
+const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// "2026-11-02" -> "lun 2 nov" (sin depender de la zona horaria).
+function fechaCorta(iso: string) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const dia = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
+  return `${DIAS[dia]} ${d} ${MESES[m - 1]}`;
+}
+
+const etiquetaMini = "text-[10px] font-semibold tracking-[0.1em] text-tenue uppercase";
+
+// Aviso de la vista por defecto: la semana actual.
+function BandaSemana({ semana, anio, lunes, domingo }: { semana: number; anio: number; lunes: string; domingo: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-interno bg-marca-50 p-3 ring-1 ring-marca/15 ring-inset">
+      <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
+        <div className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-control bg-white text-center shadow-control ring-1 ring-marca/20">
+          <div className="leading-none">
+            <span className={`block ${etiquetaMini}`}>Sem</span>
+            <span className="mt-0.5 block text-lg font-bold tabular-nums text-marca-oscuro">{semana}</span>
+          </div>
+          <span aria-hidden className="franja-marca absolute inset-x-0 bottom-0 h-0.5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-marca-oscuro">
+            Mostrando la semana actual
+            <span className="sr-only"> (semana {semana})</span>
+          </p>
+          <p className="mt-0.5 text-xs text-tenue tabular-nums">
+            {fechaCorta(lunes)} – {fechaCorta(domingo)} {anio}
+            <span className="max-sm:hidden"> · {formatoFecha(lunes)} al {formatoFecha(domingo)}</span>
+          </p>
+        </div>
+      </div>
+      <Link href={VER_TODOS} className={`${claseBotonSecundario} max-sm:w-full`}>
+        <Icono nombre="lista" />
+        Ver todos los viajes
+      </Link>
+    </div>
+  );
+}
+
+const SEGMENTO: Record<Estatus, string> = {
+  Programado: "bg-marca",
+  "En ruta": "bg-amber-500",
+  Entregado: "bg-exito",
+  Cancelado: "bg-slate-300",
+};
+
+// Reparto real por estatus de los viajes filtrados (todas las páginas).
+function Distribucion({ datos, total }: { datos: { estatus: Estatus; n: number }[]; total: number }) {
+  const resumen = datos.map((d) => `${d.estatus}: ${d.n}`).join(", ");
+  return (
+    <div>
+      <div
+        role="img"
+        aria-label={`Viajes por estatus. ${resumen}`}
+        className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-fondo-2"
+      >
+        {datos
+          .filter((d) => d.n > 0)
+          .map((d) => (
+            <span
+              key={d.estatus}
+              className={`h-full origin-left animate-crecer-x ${SEGMENTO[d.estatus]}`}
+              style={{ width: `${(d.n / total) * 100}%` }}
+            />
+          ))}
+      </div>
+      <ul aria-hidden className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-tenue">
+        {datos.map((d) => (
+          <li key={d.estatus} className="inline-flex items-center gap-1.5">
+            <span className={`size-2 rounded-full ${SEGMENTO[d.estatus]}`} />
+            {d.estatus}
+            <span className="font-semibold tabular-nums text-tinta">{d.n}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className={etiquetaMini}>{etiqueta}</dt>
+      <dd className="mt-1 text-sm font-medium text-tinta">{children}</dd>
+    </div>
+  );
+}
+
+// Tarjeta de un viaje en celular y tableta.
+function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
+  const cancelado = f.estatus === "Cancelado";
+  return (
+    <li className={`${claseTarjetaMovil} border-l-4 ${BORDE_ESTATUS[f.estatus]} ${cancelado ? "bg-slate-50!" : ""}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 pt-0.5">
+          <p className={etiquetaMini}>Pedido</p>
+          <p className="truncate font-mono text-[15px] font-semibold text-tinta">
+            <span className="text-suave">#</span>
+            {f.pedido}
+          </p>
+        </div>
+        <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+      </div>
+
+      <div className="mt-2.5 flex items-start gap-2">
+        <Icono nombre="pin" className="mt-0.5 size-4 shrink-0 text-acento" />
+        <div className="min-w-0">
+          <p
+            className={`font-display text-[17px] leading-snug font-semibold tracking-tight wrap-break-word ${cancelado ? "text-tenue" : "text-tinta"}`}
+          >
+            {f.destino}
+          </p>
+          <p className="text-sm leading-snug wrap-break-word text-tenue">{f.producto}</p>
+        </div>
+      </div>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 rounded-lg bg-fondo/80 p-3 ring-1 ring-borde/70 ring-inset">
+        <Dato etiqueta="Fecha">
+          <span className="tabular-nums">{formatoFecha(f.fecha)}</span>
+          <span className="block text-xs font-normal tabular-nums text-tenue">
+            Sem. {f.semana} · {f.anio}
+          </span>
+        </Dato>
+        <Dato etiqueta="Piloto">
+          <span className="flex items-center gap-2">
+            <Avatar nombre={f.piloto} />
+            <span className="min-w-0 leading-tight wrap-break-word">{f.piloto}</span>
+          </span>
+        </Dato>
+        <Dato etiqueta="Placa">
+          <Placa placa={f.placa} />
+        </Dato>
+        <Dato etiqueta="Planta">
+          <span className="font-mono text-[13px] font-semibold">{f.planta}</span>
+        </Dato>
+      </dl>
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-borde pt-3">
+        <div className="min-w-0">
+          <p className={etiquetaMini}>
+            Tarifa flete{cancelado && <span className="tracking-normal normal-case"> · no suma al total</span>}
+          </p>
+          <p
+            className={`text-xl leading-tight font-semibold tabular-nums ${cancelado ? "text-tenue line-through" : "text-tinta"}`}
+          >
+            {formatoQ(f.tarifaFlete)}
+          </p>
+        </div>
+        <BotonBorrar accion={borrarViaje.bind(null, f.id)} pregunta={`¿Borrar el pedido ${f.pedido}?`} />
+      </div>
+    </li>
   );
 }

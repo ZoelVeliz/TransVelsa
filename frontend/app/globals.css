@@ -18,34 +18,54 @@
   --color-tinta: #0a0d14;
   --color-cabina: #000000; /* = fondo del JPEG del logo */
   --color-cabina-2: #0b0f17;
+  --color-cabina-3: #141a26; /* hover / superficies elevadas en negro */
   --color-plata: #c0c6d0;
+  --color-plata-claro: #e6e9ef;
 
   /* Superficies y texto */
-  --color-fondo: #f3f5f9;
+  --color-fondo: #f4f6fa;
+  --color-fondo-2: #eceff5; /* bandas, cabeceras de tabla, pistas */
   --color-superficie: #ffffff;
-  --color-borde: #e4e8ef;
-  --color-borde-fuerte: #cfd5df;
+  --color-borde: #e3e7ee;
+  --color-borde-fuerte: #cdd3de;
   --color-tenue: #5b6474; /* secundario, AA 6:1 sobre blanco */
   --color-suave: #6b7383; /* terciario: íconos y decoración, AA 4.8:1 sobre blanco */
 
-  /* Semánticos */
+  /* Semánticos (dinero que entra / sale) */
   --color-exito: #15803d;
   --color-exito-claro: #dcfce7;
   --color-alerta: #b45309;
   --color-alerta-claro: #fef3c7;
   --color-peligro: #b91c1c;
+  --color-peligro-claro: #fee2e2;
 
-  --radius-tarjeta: 0.875rem;
+  --radius-tarjeta: 1rem;
   --radius-control: 0.625rem;
+  --radius-interno: 0.75rem; /* tarjetas dentro de tarjetas, paneles */
 
-  --shadow-tarjeta: 0 1px 2px rgb(10 13 20 / 0.04), 0 1px 3px rgb(10 13 20 / 0.06);
-  --shadow-elevada: 0 12px 32px -12px rgb(10 13 20 / 0.28), 0 2px 6px rgb(10 13 20 / 0.06);
-  --shadow-boton: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(10 13 20 / 0.2);
+  /* Escala tipográfica fija (usar estas, no tamaños sueltos) */
+  --text-eyebrow: 0.6875rem; /* 11px: etiquetas en mayúsculas */
+  --text-eyebrow--line-height: 1rem;
+  --text-titulo: 1.75rem; /* 28px: h1 de página (celular) */
+  --text-titulo--line-height: 2rem;
+  --text-titulo-lg: 2.25rem; /* 36px: h1 de página (sm+) */
+  --text-titulo-lg--line-height: 2.5rem;
+  --text-kpi: 1.625rem; /* 26px: cifra de KPI */
+  --text-kpi--line-height: 2rem;
+  --text-kpi-lg: 2rem; /* 32px: cifra de KPI en xl */
+  --text-kpi-lg--line-height: 2.375rem;
+
+  --shadow-tarjeta: 0 0 0 1px rgb(10 13 20 / 0.02), 0 1px 2px rgb(10 13 20 / 0.04), 0 2px 6px -2px rgb(10 13 20 / 0.05);
+  --shadow-elevada: 0 1px 2px rgb(10 13 20 / 0.05), 0 8px 16px -6px rgb(10 13 20 / 0.12), 0 20px 40px -16px rgb(10 13 20 / 0.22);
+  --shadow-flotante: 0 -1px 0 rgb(255 255 255 / 0.06) inset, 0 -12px 32px -12px rgb(0 0 0 / 0.55);
+  --shadow-boton: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 1px 2px rgb(10 13 20 / 0.18), 0 2px 6px -2px rgb(29 78 216 / 0.45);
+  --shadow-control: 0 1px 2px rgb(10 13 20 / 0.05);
 
   --animate-entrada: entrada 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-crecer: crecer 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-crecer-x: crecer-x 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-brillo: brillo 1.4s ease-in-out infinite;
+  --animate-aparecer: aparecer 0.2s ease-out both;
 
   @keyframes entrada {
     from {
@@ -63,6 +83,12 @@
       transform: scaleX(0);
     }
   }
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
   @keyframes brillo {
     to {
       transform: translateX(100%);
@@ -73,6 +99,23 @@
 @layer base {
   body {
     @apply bg-fondo font-sans text-tinta;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  /* Los saltos a #nuevo-… no quedan bajo el encabezado pegajoso del celular. */
+  [id] {
+    scroll-margin-top: 4.5rem;
+  }
+  /* Foco visible uniforme para enlaces y botones que no definan el suyo. */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-marca);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
   }
   ::selection {
     background: rgb(29 78 216 / 0.18);
@@ -126,6 +169,27 @@
   mask-image: linear-gradient(to left, #000 25%, transparent);
 }
 
+/* Barra de desplazamiento fina para tablas con scroll horizontal. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-borde-fuerte) transparent;
+}
+
+/* Cifras: tabulares y sin "saltos" de ancho. */
+@utility cifra {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+  letter-spacing: -0.01em;
+}
+
+/* Fondo de página: halo azul muy tenue arriba (solo decorativo). */
+.fondo-pagina {
+  background:
+    radial-gradient(1200px 380px at 70% -120px, rgb(29 78 216 / 0.07), transparent 70%),
+    radial-gradient(700px 260px at 0% -80px, rgb(225 29 42 / 0.035), transparent 70%),
+    var(--color-fondo);
+}
+
 /* Skeleton con brillo */
 .esqueleto {
   position: relative;
@@ -139,5 +203,37 @@
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
   animation: var(--animate-brillo);
+}
+
+
+/* Fuera de @layer para ganarle a px-3 de claseInput: espacio para el chevron
+   (SelectEstatus usa bg-none y su propio pr-6). */
+select:not([multiple]):not(.bg-none) {
+  padding-right: 2rem;
+}
+
+/* En celular el campo de fecha queda en media columna: menos relleno para
+   que "dd/mm/aaaa" quepa completo junto al ícono del calendario. */
+@media (max-width: 639px) {
+  input[type="date"] {
+    padding-inline: 0.5rem;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-inline-start: 0.125rem;
+  }
+  /* En media columna cada píxel cuenta: chevron más pegado al borde. */
+  select:not([multiple]):not(.bg-none) {
+    padding-left: 0.625rem;
+    padding-right: 1.75rem;
+    background-position: right 0.45rem center;
+  }
+}
+
+/* En pantallas táctiles tocar el campo ya abre el calendario: el ícono sobra
+   y le quita espacio a la fecha. */
+@media (max-width: 639px) and (pointer: coarse) {
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+  }
 }
 

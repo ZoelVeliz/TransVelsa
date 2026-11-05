@@ -42,8 +42,13 @@ const quetzalesCorto = new Intl.NumberFormat("es-GT", {
   style: "currency",
   currency: "GTQ",
   notation: "compact",
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 });
 
 // Para ejes y espacios chicos: "Q31.3 mil".
 export const formatoQCorto = (monto: number) => quetzalesCorto.format(monto);
+
+// "1 viaje", "3 viajes".
+export const cantidad = (n: number, uno: string, varios: string) =>
+  `${n} ${n === 1 ? uno : varios}`;

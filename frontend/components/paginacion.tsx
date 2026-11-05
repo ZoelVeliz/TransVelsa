@@ -45,7 +45,7 @@ export function Paginacion({
   return (
     <nav
       aria-label="Paginación"
-      className="flex flex-col gap-3 border-t border-borde px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 border-t border-borde bg-fondo/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-tenue">
         <p className="tabular-nums">
@@ -57,7 +57,7 @@ export function Paginacion({
           <div
             role="group"
             aria-labelledby={`tam-${clave}`}
-            className="inline-flex rounded-lg bg-slate-100 p-0.5 ring-1 ring-borde"
+            className="inline-flex rounded-lg bg-fondo-2 p-0.5 ring-1 ring-borde ring-inset"
           >
             {TAMANOS_PAGINA.map((t) => (
               <Link
@@ -85,7 +85,7 @@ export function Paginacion({
         <ul className="flex items-center gap-1 max-sm:justify-between">
           <li>
             {pagina > 1 ? (
-              <Link href={ir(pagina - 1)} scroll={false} aria-label="Página anterior" className={`${claseCelda} text-tinta ring-1 ring-inset ring-borde-fuerte hover:bg-marca-50 hover:text-marca`}>
+              <Link href={ir(pagina - 1)} scroll={false} aria-label="Página anterior" className={`${claseCelda} bg-white text-tinta shadow-control ring-1 ring-inset ring-borde-fuerte hover:bg-marca-50 hover:text-marca`}>
                 <Icono nombre="chevronIzq" className="size-4" />
               </Link>
             ) : (
@@ -104,7 +104,7 @@ export function Paginacion({
                   scroll={false}
                   aria-label={`Página ${n}`}
                   aria-current={n === pagina ? "page" : undefined}
-                  className={`${claseCelda} text-tenue hover:bg-slate-100 hover:text-tinta aria-[current=page]:bg-marca aria-[current=page]:text-white aria-[current=page]:shadow-boton`}
+                  className={`${claseCelda} text-tenue hover:bg-white hover:text-tinta hover:shadow-control aria-[current=page]:bg-marca aria-[current=page]:text-white aria-[current=page]:shadow-boton`}
                 >
                   {n}
                 </Link>
@@ -117,7 +117,7 @@ export function Paginacion({
           </li>
           <li>
             {pagina < totalPaginas ? (
-              <Link href={ir(pagina + 1)} scroll={false} aria-label="Página siguiente" className={`${claseCelda} text-tinta ring-1 ring-inset ring-borde-fuerte hover:bg-marca-50 hover:text-marca`}>
+              <Link href={ir(pagina + 1)} scroll={false} aria-label="Página siguiente" className={`${claseCelda} bg-white text-tinta shadow-control ring-1 ring-inset ring-borde-fuerte hover:bg-marca-50 hover:text-marca`}>
                 <Icono nombre="chevronDer" className="size-4" />
               </Link>
             ) : (
