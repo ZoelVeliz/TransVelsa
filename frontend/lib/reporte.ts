@@ -145,6 +145,8 @@ export async function obtenerReporte({ anio, desde, hasta }: Periodo) {
 
 export type Reporte = Awaited<ReturnType<typeof obtenerReporte>>;
 
+const SIN_VIAJES = { cantidadViajes: 0, pagoViajes: 0 };
+
 // Detalle fila por fila para el Excel: viajes, gastos y liquidación de pilotos.
 export async function obtenerDetalle({ anio, desde, hasta }: Periodo) {
   const [listaViajes, listaGastos, listaPilotos, viajesPorPiloto, movimientos] =
@@ -162,6 +164,7 @@ export async function obtenerDetalle({ anio, desde, hasta }: Periodo) {
           producto: viajes.producto,
           estatus: viajes.estatus,
           tarifaFlete: viajes.tarifaFlete,
+          pagoChofer: viajes.pagoChofer,
         })
         .from(viajes)
         .innerJoin(camiones, eq(viajes.camionId, camiones.id))
@@ -175,7 +178,11 @@ export async function obtenerDetalle({ anio, desde, hasta }: Periodo) {
         .orderBy(asc(gastos.categoria), asc(gastos.fecha), asc(gastos.id)),
       db.select().from(pilotos).where(eq(pilotos.activo, true)).orderBy(asc(pilotos.nombre)),
       db
-        .select({ pilotoId: viajes.pilotoId, viajes: count() })
+        .select({
+          pilotoId: viajes.pilotoId,
+          cantidadViajes: count(),
+          pagoViajes: sum(viajes.pagoChofer).mapWith(Number),
+        })
         .from(viajes)
         .where(
           and(
@@ -200,7 +207,7 @@ export async function obtenerDetalle({ anio, desde, hasta }: Periodo) {
     piloto: p.nombre,
     ...calcularLiquidacion(
       p,
-      viajesPorPiloto.find((v) => v.pilotoId === p.id)?.viajes ?? 0,
+      viajesPorPiloto.find((v) => v.pilotoId === p.id) ?? SIN_VIAJES,
       movimientos.filter((m) => m.pilotoId === p.id),
     ),
   }));

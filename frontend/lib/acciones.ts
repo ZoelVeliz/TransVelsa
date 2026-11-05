@@ -7,11 +7,13 @@ import {
   ESTATUS_VIAJE,
   RESPONSABLES,
   TIPOS_MOVIMIENTO,
+  TIPOS_MOVIMIENTO_CAJA,
 } from "./constantes";
 import {
   camiones,
   db,
   gastos,
+  movimientosCaja,
   movimientosPiloto,
   pilotos,
   tarifas,
@@ -83,6 +85,7 @@ export async function crearViaje(_: Estado, form: FormData) {
       destino: tarifa.destino,
       producto: tarifa.producto,
       tarifaFlete: tarifa.monto,
+      pagoChofer: tarifa.pagoChofer,
       estatus: opcion(form, "estatus", ESTATUS_VIAJE),
     });
   });
@@ -138,6 +141,7 @@ export async function crearTarifa(_: Estado, form: FormData) {
       destino: texto(form, "destino"),
       producto: texto(form, "producto"),
       monto: numero(form, "monto"),
+      pagoChofer: numero(form, "pagoChofer"),
     }),
   );
 }
@@ -145,6 +149,13 @@ export async function crearTarifa(_: Estado, form: FormData) {
 export async function actualizarMontoTarifa(id: number, monto: number) {
   if (!Number.isFinite(monto) || monto < 0) return;
   await db.update(tarifas).set({ monto }).where(eq(tarifas.id, id));
+  refresh();
+}
+
+// Igual que el flete: solo afecta a los viajes que se registren después.
+export async function actualizarPagoChoferTarifa(id: number, pagoChofer: number) {
+  if (!Number.isFinite(pagoChofer) || pagoChofer < 0) return;
+  await db.update(tarifas).set({ pagoChofer }).where(eq(tarifas.id, id));
   refresh();
 }
 
@@ -157,7 +168,6 @@ export async function crearPiloto(_: Estado, form: FormData) {
   return ejecutar(() =>
     db.insert(pilotos).values({
       nombre: texto(form, "nombre"),
-      pagoPorViaje: numero(form, "pagoPorViaje"),
       viaticoPorViaje: numero(form, "viaticoPorViaje"),
       base: numero(form, "base"),
     }),
@@ -186,5 +196,38 @@ export async function crearMovimiento(_: Estado, form: FormData) {
 
 export async function borrarMovimiento(id: number) {
   await db.delete(movimientosPiloto).where(eq(movimientosPiloto.id, id));
+  refresh();
+}
+
+// ---- Caja y cuentas ----
+
+export async function crearMovimientoCaja(_: Estado, form: FormData) {
+  return ejecutar(async () => {
+    const cuentas = RESPONSABLES.map((r) => r.nombre);
+    const cuenta = opcion(form, "cuenta", cuentas);
+    const tipo = opcion(form, "tipo", TIPOS_MOVIMIENTO_CAJA);
+    const monto = numero(form, "monto");
+    if (monto <= 0) throw new ErrorCampo("El monto debe ser mayor que cero");
+    let cuentaDestino: string | null = null;
+    if (tipo === "Transferencia") {
+      if (!form.get("cuentaDestino"))
+        throw new ErrorCampo("Elige a qué cuenta va la transferencia");
+      cuentaDestino = opcion(form, "cuentaDestino", cuentas);
+      if (cuentaDestino === cuenta)
+        throw new ErrorCampo("La transferencia debe ir a otra cuenta");
+    }
+    await db.insert(movimientosCaja).values({
+      fecha: texto(form, "fecha"),
+      cuenta,
+      tipo,
+      monto,
+      cuentaDestino,
+      descripcion: texto(form, "descripcion"),
+    });
+  });
+}
+
+export async function borrarMovimientoCaja(id: number) {
+  await db.delete(movimientosCaja).where(eq(movimientosCaja.id, id));
   refresh();
 }

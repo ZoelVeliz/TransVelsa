@@ -31,10 +31,15 @@ export const tipoMovimiento = pgEnum("tipo_movimiento", [
   "Prestamo",
 ]);
 
+export const tipoMovimientoCaja = pgEnum("tipo_movimiento_caja", [
+  "Ingreso",
+  "Egreso",
+  "Transferencia",
+]);
+
 export const pilotos = pgTable("pilotos", {
   id: serial("id").primaryKey(),
   nombre: text("nombre").notNull().unique(),
-  pagoPorViaje: dinero("pago_por_viaje").notNull().default(150),
   viaticoPorViaje: dinero("viatico_por_viaje").notNull().default(75),
   base: dinero("base").notNull().default(1500),
   activo: boolean("activo").notNull().default(true),
@@ -53,6 +58,8 @@ export const tarifas = pgTable(
     destino: text("destino").notNull(),
     producto: text("producto").notNull(),
     monto: dinero("monto").notNull(),
+    // Lo que se le paga al piloto por un viaje a este destino.
+    pagoChofer: dinero("pago_chofer").notNull().default(150),
   },
   (t) => [unique().on(t.destino, t.producto)],
 );
@@ -76,6 +83,7 @@ export const viajes = pgTable("viajes", {
   // Copia de la tarifa al momento de crear el viaje, para que cambios
   // posteriores en el tarifario no alteren viajes ya hechos.
   tarifaFlete: dinero("tarifa_flete").notNull(),
+  pagoChofer: dinero("pago_chofer").notNull().default(150),
   creadoEn: timestamp("creado_en").notNull().defaultNow(),
 });
 
@@ -102,5 +110,19 @@ export const movimientosPiloto = pgTable("movimientos_piloto", {
   semana: integer("semana").notNull(),
   monto: dinero("monto").notNull(),
   descripcion: text("descripcion"),
+  creadoEn: timestamp("creado_en").notNull().defaultNow(),
+});
+
+// Entradas y salidas de dinero de cada cuenta (Caja chica, Zoel, Darwin...).
+// Los gastos también restan del saldo de quien los pagó (ver lib/cuentas.ts).
+export const movimientosCaja = pgTable("movimientos_caja", {
+  id: serial("id").primaryKey(),
+  fecha: date("fecha").notNull(),
+  cuenta: text("cuenta").notNull(),
+  tipo: tipoMovimientoCaja("tipo").notNull(),
+  monto: dinero("monto").notNull(),
+  // Solo en transferencias: la cuenta que recibe el dinero.
+  cuentaDestino: text("cuenta_destino"),
+  descripcion: text("descripcion").notNull(),
   creadoEn: timestamp("creado_en").notNull().defaultNow(),
 });

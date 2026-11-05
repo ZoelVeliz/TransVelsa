@@ -19,7 +19,10 @@ const COLOR_RESPONSABLE: Record<(typeof RESPONSABLES)[number]["nombre"], string>
   Darwin: "FFFDE047",
   Mama: "FF4ADE80",
   Joelmir: "FF7DD3FC",
+  "Caja chica": "FF1E3A8A",
 };
+// Rellenos oscuros que necesitan letra blanca.
+const OSCUROS = new Set(["FF1E3A8A"]);
 
 const ESTATUS_COLOR: Record<string, string> = {
   Programado: "FFDBEAFE",
@@ -302,7 +305,7 @@ export async function GET(request: NextRequest) {
   const hojaViajes = libro.addWorksheet("Viajes", {
     views: [{ state: "frozen", ySplit: 3 }],
   });
-  titulo(hojaViajes, "PLANIFICACIÓN Y PROGRAMACIÓN DE VIAJES", rango, 10);
+  titulo(hojaViajes, "PLANIFICACIÓN Y PROGRAMACIÓN DE VIAJES", rango, 11);
   tabla(
     hojaViajes,
     3,
@@ -317,6 +320,7 @@ export async function GET(request: NextRequest) {
       { titulo: "Destino / Producto", ancho: 36, alinear: "center" },
       { titulo: "Estatus", ancho: 13, alinear: "center" },
       { titulo: "Tarifa Flete", ancho: 15, formato: Q, alinear: "right" },
+      { titulo: "Pago chofer", ancho: 14, formato: Q, alinear: "right" },
     ],
     detalle.viajes.map((v) => [
       v.pedido,
@@ -329,8 +333,9 @@ export async function GET(request: NextRequest) {
       `${v.destino} / ${v.producto}`,
       v.estatus,
       v.tarifaFlete,
+      v.pagoChofer,
     ]),
-    { etiqueta: "Total", columnas: [10] },
+    { etiqueta: "Total", columnas: [10, 11] },
   );
   detalle.viajes.forEach((v, i) => {
     hojaViajes.getCell(4 + i, 9).fill = relleno(ESTATUS_COLOR[v.estatus] ?? BLANCO);
@@ -360,8 +365,11 @@ export async function GET(request: NextRequest) {
     // Como en el Excel original: el año se pinta con el color de quien pagó.
     lista.forEach((g, i) => {
       const color = COLOR_RESPONSABLE[g.pagadoPor as keyof typeof COLOR_RESPONSABLE] ?? BLANCO;
-      hoja.getCell(4 + i, 1).fill = relleno(color);
-      hoja.getCell(4 + i, 6).fill = relleno(color);
+      for (const col of [1, 6]) {
+        const celda = hoja.getCell(4 + i, col);
+        celda.fill = relleno(color);
+        if (OSCUROS.has(color)) celda.font = { ...celda.font, color: { argb: BLANCO } };
+      }
     });
   }
 

@@ -141,12 +141,15 @@ export function Filtros({
   boton = "Filtrar",
   children,
   activos,
+  limpiar = action,
 }: {
   action: string;
   boton?: string;
   children: ReactNode;
   /** Muestra "Limpiar" cuando hay algún filtro aplicado. */
   activos?: boolean;
+  /** A dónde lleva "Limpiar" (si la página aplica filtros por defecto). */
+  limpiar?: string;
 }) {
   return (
     <Form
@@ -159,7 +162,7 @@ export function Filtros({
         {boton}
       </button>
       {activos && (
-        <Link href={action} className={`${claseBotonFantasma} max-sm:col-span-2`}>
+        <Link href={limpiar} className={`${claseBotonFantasma} max-sm:col-span-2`}>
           <Icono nombre="equis" />
           Limpiar
         </Link>

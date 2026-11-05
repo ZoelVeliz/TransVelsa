@@ -22,6 +22,16 @@ export function anioSemana(iso: string) {
   return { anio: fecha.getUTCFullYear(), semana };
 }
 
+// Lunes y domingo (AAAA-MM-DD) de la semana ISO que contiene la fecha.
+export function rangoSemana(iso: string) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const fecha = new Date(Date.UTC(a, m - 1, d));
+  const dia = fecha.getUTCDay() || 7;
+  const correr = (dias: number) =>
+    new Date(fecha.getTime() + dias * 86400000).toISOString().slice(0, 10);
+  return { lunes: correr(1 - dia), domingo: correr(7 - dia) };
+}
+
 export function hoyISO() {
   return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/Guatemala",

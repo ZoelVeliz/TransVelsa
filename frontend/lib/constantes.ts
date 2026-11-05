@@ -9,12 +9,15 @@ export const CATEGORIAS_GASTO = ["Diesel", "Repuestos"] as const;
 
 export const TIPOS_MOVIMIENTO = ["Adelanto", "Prestamo"] as const;
 
+export const TIPOS_MOVIMIENTO_CAJA = ["Ingreso", "Egreso", "Transferencia"] as const;
+
 // Quién pone el dinero de cada gasto (los colores de la leyenda del Excel).
 export const RESPONSABLES = [
-  { nombre: "Zoel", clase: "bg-red-400" },
-  { nombre: "Darwin", clase: "bg-yellow-300" },
-  { nombre: "Mama", clase: "bg-green-400" },
-  { nombre: "Joelmir", clase: "bg-sky-300" },
+  { nombre: "Zoel", clase: "bg-red-400", texto: "text-tinta" },
+  { nombre: "Darwin", clase: "bg-yellow-300", texto: "text-tinta" },
+  { nombre: "Mama", clase: "bg-green-400", texto: "text-tinta" },
+  { nombre: "Joelmir", clase: "bg-sky-300", texto: "text-tinta" },
+  { nombre: "Caja chica", clase: "bg-blue-900", texto: "text-white" },
 ] as const;
 
 export const ESTILO_ESTATUS: Record<(typeof ESTATUS_VIAJE)[number], string> = {

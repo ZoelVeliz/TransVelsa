@@ -3,14 +3,13 @@ import type { movimientosPiloto, pilotos } from "./db/schema";
 type Piloto = typeof pilotos.$inferSelect;
 type Movimiento = typeof movimientosPiloto.$inferSelect;
 
-// Misma cuenta que la hoja "Taison" del Excel: viajes × tarifa + viáticos + base,
-// menos adelantos de viático y préstamos del periodo.
+// Misma cuenta que la hoja "Taison" del Excel: pago de cada viaje (según su
+// destino en el tarifario) + viáticos + base, menos adelantos y préstamos.
 export function calcularLiquidacion(
   piloto: Piloto,
-  cantidadViajes: number,
+  { cantidadViajes, pagoViajes }: { cantidadViajes: number; pagoViajes: number },
   movimientos: Movimiento[],
 ) {
-  const pagoViajes = cantidadViajes * piloto.pagoPorViaje;
   const viaticos = cantidadViajes * piloto.viaticoPorViaje;
   const total = pagoViajes + viaticos + piloto.base;
   const sumar = (tipo: Movimiento["tipo"]) =>

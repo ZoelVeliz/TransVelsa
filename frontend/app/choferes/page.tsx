@@ -1,7 +1,9 @@
-import { and, asc, between, count, desc, eq, max, min } from "drizzle-orm";
+import { and, asc, between, count, desc, eq, max, min, sum } from "drizzle-orm";
+import { io } from "next/cache";
 import { Suspense, type ReactNode } from "react";
 import {
   actualizarMontoTarifa,
+  actualizarPagoChoferTarifa,
   borrarMovimiento,
   borrarTarifa,
   crearCamion,
@@ -73,6 +75,8 @@ function EntradaQ({ children }: { children: ReactNode }) {
 
 async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
+  // La fecha de hoy se lee por visita, no en el prerender (Cache Components).
+  await io();
 
   // Por defecto se liquida el rango de semanas con viajes del año más reciente.
   const [rangoDatos] = await db
@@ -93,7 +97,11 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
       db.select().from(camiones).orderBy(asc(camiones.placa)),
       db.select().from(tarifas).orderBy(asc(tarifas.destino), asc(tarifas.producto)),
       db
-        .select({ pilotoId: viajes.pilotoId, viajes: count() })
+        .select({
+          pilotoId: viajes.pilotoId,
+          cantidadViajes: count(),
+          pagoViajes: sum(viajes.pagoChofer).mapWith(Number),
+        })
         .from(viajes)
         .where(
           and(
@@ -139,7 +147,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         <div className="mb-4">
           <Nota>
             Año {anio}, semanas {desde} a {hasta}. Solo cuentan los viajes{" "}
-            <b>Entregados</b>; adelantos y préstamos se descuentan según su fecha.
+            <b>Entregados</b>, y a cada uno se le paga lo que dice el tarifario para su
+            destino. Adelantos y préstamos se descuentan según su fecha.
           </Nota>
         </div>
         {pilotosActivos.length === 0 ? (
@@ -152,8 +161,11 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
               <Liquidacion
                 key={p.id}
                 piloto={p}
-                cantidadViajes={
-                  viajesPorPiloto.find((v) => v.pilotoId === p.id)?.viajes ?? 0
+                viajes={
+                  viajesPorPiloto.find((v) => v.pilotoId === p.id) ?? {
+                    cantidadViajes: 0,
+                    pagoViajes: 0,
+                  }
                 }
                 movimientos={movimientos.filter((m) => m.pilotoId === p.id)}
               />
@@ -221,6 +233,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     <th>Destino</th>
                     <th>Producto</th>
                     <th className="text-right">Tarifa flete</th>
+                    <th className="text-right">Pago chofer</th>
                     <th className="w-10">
                       <span className="sr-only">Acciones</span>
                     </th>
@@ -239,7 +252,15 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                       <td className="text-right">
                         <MontoEditable
                           monto={t.monto}
+                          etiqueta={`Tarifa flete a ${t.destino}, ${t.producto}`}
                           accion={actualizarMontoTarifa.bind(null, t.id)}
+                        />
+                      </td>
+                      <td className="text-right">
+                        <MontoEditable
+                          monto={t.pagoChofer}
+                          etiqueta={`Pago chofer a ${t.destino}, ${t.producto}`}
+                          accion={actualizarPagoChoferTarifa.bind(null, t.id)}
                         />
                       </td>
                       <td className="w-10 text-right">
@@ -252,7 +273,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             </div>
           )}
           <div className="space-y-3 border-t border-borde p-4 sm:p-5">
-            <Nota tono="ayuda">Cambiar una tarifa solo afecta a los viajes nuevos.</Nota>
+            <Nota tono="ayuda">Cambiar la tarifa o el pago al chofer solo afecta a los viajes nuevos.</Nota>
             <PanelAlta>
               <Formulario accion={crearTarifa} textoBoton="Agregar tarifa">
                 <Campo etiqueta="Destino" ancho>
@@ -269,6 +290,19 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                       step="0.01"
                       min="0"
                       required
+                      className={`${claseInput} w-32 pl-7 max-sm:w-full`}
+                    />
+                  </EntradaQ>
+                </Campo>
+                <Campo etiqueta="Pago chofer (Q)">
+                  <EntradaQ>
+                    <input
+                      name="pagoChofer"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      defaultValue="150"
                       className={`${claseInput} w-32 pl-7 max-sm:w-full`}
                     />
                   </EntradaQ>
@@ -293,7 +327,6 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   <thead className={claseThead}>
                     <tr>
                       <th>Nombre</th>
-                      <th className="text-right">Por viaje</th>
                       <th className="text-right">Viático/viaje</th>
                       <th className="text-right">Base</th>
                     </tr>
@@ -312,7 +345,6 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                             )}
                           </span>
                         </td>
-                        <td className="text-right font-medium tabular-nums">{formatoQ(p.pagoPorViaje)}</td>
                         <td className="text-right font-medium tabular-nums">{formatoQ(p.viaticoPorViaje)}</td>
                         <td className="text-right font-medium tabular-nums">{formatoQ(p.base)}</td>
                       </tr>
@@ -326,9 +358,6 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 <Formulario accion={crearPiloto} textoBoton="Agregar piloto">
                   <Campo etiqueta="Nombre" ancho>
                     <input name="nombre" required className={`${claseInput} w-40`} />
-                  </Campo>
-                  <Campo etiqueta="Por viaje">
-                    <input name="pagoPorViaje" type="number" step="0.01" min="0" defaultValue="150" className={`${claseInput} w-24`} />
                   </Campo>
                   <Campo etiqueta="Viático/viaje">
                     <input name="viaticoPorViaje" type="number" step="0.01" min="0" defaultValue="75" className={`${claseInput} w-24`} />
@@ -377,15 +406,15 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
 
 function Liquidacion({
   piloto,
-  cantidadViajes,
+  viajes,
   movimientos,
 }: {
   piloto: typeof pilotos.$inferSelect;
-  cantidadViajes: number;
+  viajes: { cantidadViajes: number; pagoViajes: number };
   movimientos: (typeof movimientosPiloto.$inferSelect)[];
 }) {
-  const { pagoViajes, viaticos, total, adelantos, prestamos, liquido } =
-    calcularLiquidacion(piloto, cantidadViajes, movimientos);
+  const { cantidadViajes, pagoViajes, viaticos, total, adelantos, prestamos, liquido } =
+    calcularLiquidacion(piloto, viajes, movimientos);
   const descuentos = adelantos + prestamos;
   const pct = (v: number) => (total > 0 ? Math.min(100, Math.max(0, (v / total) * 100)) : 0);
   const fila = "flex items-baseline justify-between gap-3 py-2.5";
@@ -398,7 +427,7 @@ function Liquidacion({
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-lg font-semibold leading-tight">{piloto.nombre}</h3>
           <p className="truncate text-[11px] text-slate-400">
-            <span className="tabular-nums">{formatoQ(piloto.pagoPorViaje)}</span>/viaje · base{" "}
+            viático <span className="tabular-nums">{formatoQ(piloto.viaticoPorViaje)}</span>/viaje · base{" "}
             <span className="tabular-nums">{formatoQ(piloto.base)}</span>
           </p>
         </div>
@@ -411,7 +440,7 @@ function Liquidacion({
       <dl className="divide-y divide-borde px-4">
         <div className={fila}>
           <dt className="text-tenue">
-            {cantidadViajes} viajes <span className="font-normal text-tenue">× {formatoQ(piloto.pagoPorViaje)}</span>
+            Pago por viajes <span className="font-normal text-tenue">(según destino)</span>
           </dt>
           <dd className="font-medium tabular-nums text-tinta">{formatoQ(pagoViajes)}</dd>
         </div>

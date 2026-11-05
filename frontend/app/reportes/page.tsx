@@ -1,3 +1,4 @@
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { RESPONSABLES } from "@/lib/constantes";
 import type { Params } from "@/lib/filtros";
@@ -40,6 +41,8 @@ export default function Page(props: PageProps<"/reportes">) {
 
 async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
+  // La fecha de hoy se lee por visita, no en el prerender (Cache Components).
+  await io();
   const { anios, periodo } = await resolverPeriodo(sp);
   const { anio, desde, hasta } = periodo;
   const { semanas, total, pendiente, porCamion, porDestino, porPiloto, porResponsable } =

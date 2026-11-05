@@ -160,6 +160,8 @@ const TRAZOS = {
   ),
   lista: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
   chevron: <path d="m6 9 6 6 6-6" />,
+  chevronIzq: <path d="m15 18-6-6 6-6" />,
+  chevronDer: <path d="m9 18 6-6-6-6" />,
   equis: <path d="M18 6 6 18M6 6l12 12" />,
 } satisfies Record<string, ReactNode>;
 

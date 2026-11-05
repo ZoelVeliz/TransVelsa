@@ -1,5 +1,6 @@
-import { and, asc, desc, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, sum, type SQL } from "drizzle-orm";
 import Link from "next/link";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import {
   borrarViaje,
@@ -8,9 +9,10 @@ import {
 } from "@/lib/acciones";
 import { ESTATUS_VIAJE } from "@/lib/constantes";
 import { camiones, db, pilotos, tarifas, viajes } from "@/lib/db";
-import { param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
-import { formatoFecha, formatoQ, hoyISO } from "@/lib/formato";
+import { paginacion, param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
+import { anioSemana, formatoFecha, formatoQ, hoyISO, rangoSemana } from "@/lib/formato";
 import { BORDE_ESTATUS } from "@/components/estatus";
+import { Paginacion } from "@/components/paginacion";
 import {
   BotonBorrar,
   Formulario,
@@ -30,6 +32,7 @@ import {
   Encabezado,
   Filtros,
   Icono,
+  Nota,
   PanelAlta,
   Pastilla,
   Placa,
@@ -37,6 +40,9 @@ import {
   Tarjeta,
   Vacio,
 } from "@/components/ui";
+
+const CLAVES_FILTRO = ["anio", "semanaDesde", "semanaHasta", "fechaDesde", "fechaHasta", "piloto", "estatus", "todos"];
+const VER_TODOS = "/viajes?todos=1";
 
 export default function Page(props: PageProps<"/viajes">) {
   return (
@@ -56,20 +62,40 @@ export default function Page(props: PageProps<"/viajes">) {
 
 async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
+  // La fecha de hoy se lee por visita, no en el prerender (Cache Components).
+  await io();
+
+  // Sin ningún filtro en la URL se muestra la semana actual (lunes a domingo).
+  // Basta con que venga cualquier clave (aunque vacía, como al enviar el
+  // formulario) o ?todos=1 para respetar lo que pidió el usuario.
+  const hoy = hoyISO();
+  const actual = { ...anioSemana(hoy), ...rangoSemana(hoy) };
+  const porDefecto = !CLAVES_FILTRO.some((k) => k in sp);
+
   // Rangos invertidos (p. ej. semana 40 a 38) se acomodan solos.
   const ordenar = <T extends string | number>(a?: T, b?: T) =>
     a !== undefined && b !== undefined && a > b ? [b, a] : [a, b];
   const [semanaDesde, semanaHasta] = ordenar(paramNumero(sp, "semanaDesde"), paramNumero(sp, "semanaHasta"));
   const [fechaDesde, fechaHasta] = ordenar(paramFecha(sp, "fechaDesde"), paramFecha(sp, "fechaHasta"));
-  const filtro = {
-    anio: paramNumero(sp, "anio"),
-    semanaDesde,
-    semanaHasta,
-    fechaDesde,
-    fechaHasta,
-    pilotoId: paramNumero(sp, "piloto"),
-    estatus: ESTATUS_VIAJE.find((e) => e === param(sp, "estatus")),
-  };
+  const filtro = porDefecto
+    ? {
+        anio: actual.anio,
+        semanaDesde: actual.semana,
+        semanaHasta: actual.semana,
+        fechaDesde: actual.lunes,
+        fechaHasta: actual.domingo,
+        pilotoId: undefined,
+        estatus: undefined,
+      }
+    : {
+        anio: paramNumero(sp, "anio"),
+        semanaDesde,
+        semanaHasta,
+        fechaDesde,
+        fechaHasta,
+        pilotoId: paramNumero(sp, "piloto"),
+        estatus: ESTATUS_VIAJE.find((e) => e === param(sp, "estatus")),
+      };
 
   const condiciones: SQL[] = [];
   if (filtro.anio) condiciones.push(eq(viajes.anio, filtro.anio));
@@ -80,7 +106,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   if (filtro.pilotoId) condiciones.push(eq(viajes.pilotoId, filtro.pilotoId));
   if (filtro.estatus) condiciones.push(eq(viajes.estatus, filtro.estatus));
 
-  const [listaPilotos, listaCamiones, listaTarifas, semanas, filas] =
+  const donde = and(...condiciones);
+  const [listaPilotos, listaCamiones, listaTarifas, semanas, porEstatus] =
     await Promise.all([
       db.select().from(pilotos).where(eq(pilotos.activo, true)).orderBy(asc(pilotos.nombre)),
       db.select().from(camiones).where(eq(camiones.activo, true)).orderBy(asc(camiones.placa)),
@@ -89,35 +116,51 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         .selectDistinct({ anio: viajes.anio, semana: viajes.semana })
         .from(viajes)
         .orderBy(desc(viajes.anio), desc(viajes.semana)),
+      // Los resúmenes cubren todos los viajes filtrados, no solo la página visible.
       db
-        .select({
-          id: viajes.id,
-          pedido: viajes.pedido,
-          anio: viajes.anio,
-          semana: viajes.semana,
-          fecha: viajes.fecha,
-          placa: camiones.placa,
-          piloto: pilotos.nombre,
-          planta: viajes.planta,
-          destino: viajes.destino,
-          producto: viajes.producto,
-          estatus: viajes.estatus,
-          tarifaFlete: viajes.tarifaFlete,
-        })
+        .select({ estatus: viajes.estatus, n: count(), monto: sum(viajes.tarifaFlete).mapWith(Number) })
         .from(viajes)
-        .innerJoin(camiones, eq(viajes.camionId, camiones.id))
-        .innerJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
-        .where(and(...condiciones))
-        .orderBy(desc(viajes.fecha), desc(viajes.id)),
+        .where(donde)
+        .groupBy(viajes.estatus),
     ]);
 
-  const activos = filas.filter((f) => f.estatus !== "Cancelado");
-  const total = activos.reduce((s, f) => s + f.tarifaFlete, 0);
-  const contar = (e: string) => filas.filter((f) => f.estatus === e).length;
+  const contar = (e: string) => porEstatus.find((x) => x.estatus === e)?.n ?? 0;
+  const totalFilas = porEstatus.reduce((s, x) => s + x.n, 0);
+  const activos = totalFilas - contar("Cancelado");
+  const total = porEstatus
+    .filter((x) => x.estatus !== "Cancelado")
+    .reduce((s, x) => s + (x.monto ?? 0), 0);
   const entregados = contar("Entregado");
-  const pctEntregados = activos.length ? (entregados / activos.length) * 100 : 0;
-  const anios = [...new Set(semanas.map((s) => s.anio))];
-  const listaSemanas = [...new Set(semanas.map((s) => s.semana))].sort((a, b) => a - b);
+  const pctEntregados = activos ? (entregados / activos) * 100 : 0;
+
+  const pag = paginacion(sp);
+  const pagina = Math.min(pag.pagina, Math.max(1, Math.ceil(totalFilas / pag.porPagina)));
+  const filas = await db
+    .select({
+      id: viajes.id,
+      pedido: viajes.pedido,
+      anio: viajes.anio,
+      semana: viajes.semana,
+      fecha: viajes.fecha,
+      placa: camiones.placa,
+      piloto: pilotos.nombre,
+      planta: viajes.planta,
+      destino: viajes.destino,
+      producto: viajes.producto,
+      estatus: viajes.estatus,
+      tarifaFlete: viajes.tarifaFlete,
+    })
+    .from(viajes)
+    .innerJoin(camiones, eq(viajes.camionId, camiones.id))
+    .innerJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
+    .where(donde)
+    .orderBy(desc(viajes.fecha), desc(viajes.id))
+    .limit(pag.porPagina)
+    .offset((pagina - 1) * pag.porPagina);
+
+  // La semana y el año actuales siempre aparecen en los filtros, aunque aún no tengan viajes.
+  const anios = [...new Set([actual.anio, ...semanas.map((s) => s.anio)])].sort((a, b) => b - a);
+  const listaSemanas = [...new Set([actual.semana, ...semanas.map((s) => s.semana)])].sort((a, b) => a - b);
   const hayFiltros = Boolean(
     filtro.anio ||
       filtro.semanaDesde ||
@@ -134,7 +177,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     <>
       <Resumen
         datos={[
-          { etiqueta: "Viajes", valor: String(activos.length), icono: "camion", nota: "sin cancelados" },
+          { etiqueta: "Viajes", valor: String(activos), icono: "camion", nota: "sin cancelados" },
           {
             etiqueta: "Entregados",
             valor: String(entregados),
@@ -153,7 +196,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             valor: formatoQ(total),
             icono: "billete",
             destacado: true,
-            nota: `${activos.length} viajes`,
+            nota: `${activos} viajes`,
           },
         ]}
       />
@@ -222,9 +265,10 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         titulo="Viajes"
         icono="lista"
         flush
-        extra={<Pastilla>{filas.length}</Pastilla>}
+        extra={<Pastilla>{totalFilas}</Pastilla>}
         acciones={
-          <Filtros action="/viajes" activos={hayFiltros}>
+          <Filtros action="/viajes" activos={hayFiltros} limpiar={VER_TODOS}>
+            {pag.porPagina !== 20 && <input type="hidden" name="porPagina" value={pag.porPagina} />}
             <Campo etiqueta="Año">
               <select name="anio" defaultValue={filtro.anio ?? ""} className={claseInput}>
                 <option value="">Todos</option>
@@ -274,19 +318,32 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           </Filtros>
         }
       >
+        {porDefecto && (
+          <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+            <Nota>
+              Mostrando la <b>semana actual</b>: semana {actual.semana}, del{" "}
+              {formatoFecha(actual.lunes)} al {formatoFecha(actual.domingo)}.{" "}
+              <Link href={VER_TODOS} className="font-semibold underline underline-offset-2">
+                Ver todos
+              </Link>
+            </Nota>
+          </div>
+        )}
         {filas.length === 0 ? (
           <Vacio
             icono="filtro"
             titulo="Sin viajes"
             accion={
               hayFiltros && (
-                <Link href="/viajes" className={claseBotonSecundario}>
-                  Limpiar filtros
+                <Link href={VER_TODOS} className={claseBotonSecundario}>
+                  {porDefecto ? "Ver todos los viajes" : "Limpiar filtros"}
                 </Link>
               )
             }
           >
-            No hay viajes con estos filtros.
+            {porDefecto
+              ? `Todavía no hay viajes en la semana ${actual.semana}.`
+              : "No hay viajes con estos filtros."}
           </Vacio>
         ) : (
           <>
@@ -333,7 +390,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
               <li className="relative overflow-hidden rounded-xl bg-tinta px-4 py-3 text-white">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.1em] text-plata">
-                    Total (sin cancelados)
+                    Total filtrado (sin cancelados)
                   </span>
                   <span className="text-xl font-semibold tabular-nums">{formatoQ(total)}</span>
                 </div>
@@ -403,7 +460,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 <tfoot>
                   <tr className={claseTotal}>
                     <td colSpan={9} className="text-right">
-                      Total (sin cancelados)
+                      Total filtrado (sin cancelados)
                     </td>
                     <td className="text-right text-base tabular-nums">{formatoQ(total)}</td>
                     <td />
@@ -411,6 +468,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 </tfoot>
               </table>
             </div>
+            <Paginacion ruta="/viajes" sp={sp} total={totalFilas} pagina={pagina} porPagina={pag.porPagina} />
           </>
         )}
       </Tarjeta>

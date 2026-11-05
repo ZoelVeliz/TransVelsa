@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
   },
   cacheComponents: true,
+  // La portada es Viajes; se redirige antes de renderizar nada.
+  redirects() {
+    return [{ source: "/", destination: "/viajes", permanent: false }];
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

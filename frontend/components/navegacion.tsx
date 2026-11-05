@@ -8,6 +8,7 @@ import { Icono, type NombreIcono } from "./iconos";
 const enlaces: { href: string; texto: string; corto: string; icono: NombreIcono }[] = [
   { href: "/viajes", texto: "Viajes", corto: "Viajes", icono: "camion" },
   { href: "/gastos", texto: "Diésel y gastos", corto: "Gastos", icono: "bomba" },
+  { href: "/movimientos", texto: "Caja y cuentas", corto: "Caja", icono: "billetera" },
   { href: "/choferes", texto: "Tarifario y choferes", corto: "Choferes", icono: "usuarios" },
   { href: "/reportes", texto: "Reportes", corto: "Reportes", icono: "grafica" },
 ];
@@ -85,7 +86,7 @@ export function NavegacionMovil() {
       className="fixed inset-x-0 bottom-0 z-30 bg-cabina/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-md md:hidden"
     >
       <div className="franja-marca h-0.5" />
-      <div className="grid h-16 grid-cols-4">
+      <div className="grid h-16 grid-cols-5">
         {enlaces.map((e) => {
           const activo = ruta.startsWith(e.href);
           return (

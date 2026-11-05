@@ -154,9 +154,11 @@ export function SelectEstatus({
 export function MontoEditable({
   monto,
   accion,
+  etiqueta = "Monto en quetzales",
 }: {
   monto: number;
   accion: (monto: number) => Promise<void>;
+  etiqueta?: string;
 }) {
   const [pendiente, iniciar] = useTransition();
   const [guardado, setGuardado] = useState(false);
@@ -174,7 +176,7 @@ export function MontoEditable({
         type="number"
         step="0.01"
         min="0"
-        aria-label="Monto en quetzales"
+        aria-label={etiqueta}
         defaultValue={monto}
         disabled={pendiente}
         onBlur={(e) => {

@@ -35,10 +35,11 @@ async function main() {
     .returning();
 
   await db.insert(tarifas).values([
-    { destino: "Champas", producto: "Monocapa", monto: 1830 },
-    { destino: "Ferreteria Jalapa", producto: "Monocapa", monto: 2030 },
-    { destino: "Ferreteria Jalapa", producto: "Cemento", monto: 2030 },
-    { destino: "Bodega Industrial Rancho", producto: "Cemento", monto: 1830 },
+    // El Excel paga Q150 por viaje sin importar el destino; ajústalo en el tarifario.
+    { destino: "Champas", producto: "Monocapa", monto: 1830, pagoChofer: 150 },
+    { destino: "Ferreteria Jalapa", producto: "Monocapa", monto: 2030, pagoChofer: 150 },
+    { destino: "Ferreteria Jalapa", producto: "Cemento", monto: 2030, pagoChofer: 150 },
+    { destino: "Bodega Industrial Rancho", producto: "Cemento", monto: 1830, pagoChofer: 150 },
   ]);
 
   const v = (

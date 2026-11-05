@@ -1,11 +1,14 @@
-import { and, asc, desc, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, sum, type SQL } from "drizzle-orm";
+import type { ReactNode } from "react";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { borrarGasto, crearGasto } from "@/lib/acciones";
 import { CATEGORIAS_GASTO, RESPONSABLES } from "@/lib/constantes";
 import { db, gastos } from "@/lib/db";
-import { param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
+import { paginacion, param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
 import { formatoFecha, formatoQ, hoyISO } from "@/lib/formato";
 import { BotonBorrar, Formulario } from "@/components/interactivos";
+import { Paginacion } from "@/components/paginacion";
 import {
   BarraHerramientas,
   Campo,
@@ -29,8 +32,8 @@ type Gasto = typeof gastos.$inferSelect;
 
 const colorDe = (nombre: string) =>
   RESPONSABLES.find((r) => r.nombre === nombre)?.clase ?? "bg-slate-200";
-
-const suma = (lista: Gasto[]) => lista.reduce((s, g) => s + g.monto, 0);
+const textoDe = (nombre: string) =>
+  RESPONSABLES.find((r) => r.nombre === nombre)?.texto ?? "text-tinta";
 
 const porcentaje = (parte: number, total: number) =>
   total > 0 ? Math.round((parte / total) * 100) : 0;
@@ -53,6 +56,8 @@ export default function Page(props: PageProps<"/gastos">) {
 
 async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
+  // La fecha de hoy se lee por visita, no en el prerender (Cache Components).
+  await io();
   // Si las fechas vienen al revés se intercambian.
   let fechaDesde = paramFecha(sp, "fechaDesde");
   let fechaHasta = paramFecha(sp, "fechaHasta");
@@ -73,23 +78,56 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   if (filtro.fechaHasta) condiciones.push(lte(gastos.fecha, filtro.fechaHasta));
   if (filtro.pagadoPor) condiciones.push(eq(gastos.pagadoPor, filtro.pagadoPor));
 
-  const [semanas, filas] = await Promise.all([
+  const donde = and(...condiciones);
+  const [semanas, agrupado] = await Promise.all([
     db
       .selectDistinct({ anio: gastos.anio, semana: gastos.semana })
       .from(gastos)
       .orderBy(desc(gastos.anio), desc(gastos.semana)),
+    // Totales sobre todo lo filtrado, no solo la página visible.
+    db
+      .select({
+        categoria: gastos.categoria,
+        pagadoPor: gastos.pagadoPor,
+        n: count(),
+        monto: sum(gastos.monto).mapWith(Number),
+      })
+      .from(gastos)
+      .where(donde)
+      .groupBy(gastos.categoria, gastos.pagadoPor),
+  ]);
+
+  const sumar = (f: (x: (typeof agrupado)[number]) => boolean, campo: "n" | "monto") =>
+    agrupado.filter(f).reduce((s, x) => s + (x[campo] ?? 0), 0);
+  const totalDiesel = sumar((x) => x.categoria === "Diesel", "monto");
+  const totalRepuestos = sumar((x) => x.categoria === "Repuestos", "monto");
+  const total = totalDiesel + totalRepuestos;
+  const nDiesel = sumar((x) => x.categoria === "Diesel", "n");
+  const nRepuestos = sumar((x) => x.categoria === "Repuestos", "n");
+  const porPersona = Object.fromEntries(
+    RESPONSABLES.map((r) => [r.nombre, sumar((x) => x.pagadoPor === r.nombre, "monto")]),
+  );
+
+  // Cada tabla pagina por su cuenta: ?paginaDiesel=2&paginaRepuestos=1
+  const claves = ["paginaDiesel", "paginaRepuestos"];
+  const pagDiesel = paginacion(sp, "paginaDiesel");
+  const pagRepuestos = paginacion(sp, "paginaRepuestos");
+  const { porPagina } = pagDiesel;
+  const acotar = (p: number, n: number) => Math.min(p, Math.max(1, Math.ceil(n / porPagina)));
+  const paginaDiesel = acotar(pagDiesel.pagina, nDiesel);
+  const paginaRepuestos = acotar(pagRepuestos.pagina, nRepuestos);
+  const listar = (categoria: Gasto["categoria"], pagina: number) =>
     db
       .select()
       .from(gastos)
-      .where(and(...condiciones))
-      .orderBy(asc(gastos.fecha), asc(gastos.id)),
+      .where(and(donde, eq(gastos.categoria, categoria)))
+      .orderBy(asc(gastos.fecha), asc(gastos.id))
+      .limit(porPagina)
+      .offset((pagina - 1) * porPagina);
+  const [diesel, repuestos] = await Promise.all([
+    listar("Diesel", paginaDiesel),
+    listar("Repuestos", paginaRepuestos),
   ]);
-
-  const diesel = filas.filter((g) => g.categoria === "Diesel");
-  const repuestos = filas.filter((g) => g.categoria === "Repuestos");
-  const total = suma(filas);
-  const totalDiesel = suma(diesel);
-  const totalRepuestos = suma(repuestos);
 
   return (
     <>
@@ -110,16 +148,16 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           },
           {
             etiqueta: "Registros",
-            valor: String(filas.length),
+            valor: String(nDiesel + nRepuestos),
             icono: "lista",
-            nota: `${diesel.length} diésel · ${repuestos.length} repuestos`,
+            nota: `${nDiesel} diésel · ${nRepuestos} repuestos`,
           },
           {
             etiqueta: "Total gastos",
             valor: formatoQ(total),
             icono: "monedas",
             destacado: true,
-            nota: `${filas.length} registros`,
+            nota: `${nDiesel + nRepuestos} registros`,
           },
         ]}
       />
@@ -187,6 +225,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             filtro.anio || filtro.semana || filtro.fechaDesde || filtro.fechaHasta || filtro.pagadoPor,
           )}
         >
+          {porPagina !== 20 && <input type="hidden" name="porPagina" value={porPagina} />}
           <Campo etiqueta="Año">
             <select name="anio" defaultValue={filtro.anio ?? ""} className={claseInput}>
               <option value="">Todos</option>
@@ -210,7 +249,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             <input name="fechaHasta" type="date" defaultValue={filtro.fechaHasta} className={claseInput} />
           </Campo>
           <Campo etiqueta="Pagado por" ancho>
-            <select name="pagadoPor" defaultValue={filtro.pagadoPor ?? ""} className={`${claseInput} sm:min-w-32`}>
+            <select name="pagadoPor" defaultValue={filtro.pagadoPor ?? ""} className={`${claseInput} sm:min-w-36`}>
               <option value="">Todos</option>
               {RESPONSABLES.map((r) => (
                 <option key={r.nombre}>{r.nombre}</option>
@@ -219,20 +258,34 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           </Campo>
         </Filtros>
         <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
-          <Leyenda filas={filas} />
+          <Leyenda porPersona={porPersona} />
         </div>
       </BarraHerramientas>
 
       {/* Lado a lado solo en pantallas muy anchas: con el menú lateral, a 1440px las tablas no caben completas. */}
       <div className="grid gap-6 2xl:grid-cols-2">
-        <TablaGastos titulo="Diésel" filas={diesel} total={totalDiesel} />
-        <TablaGastos titulo="Repuestos" filas={repuestos} total={totalRepuestos} />
+        <TablaGastos
+          titulo="Diésel"
+          filas={diesel}
+          total={totalDiesel}
+          paginacion={
+            <Paginacion ruta="/gastos" sp={sp} total={nDiesel} pagina={paginaDiesel} porPagina={porPagina} clave="paginaDiesel" reiniciar={claves} />
+          }
+        />
+        <TablaGastos
+          titulo="Repuestos"
+          filas={repuestos}
+          total={totalRepuestos}
+          paginacion={
+            <Paginacion ruta="/gastos" sp={sp} total={nRepuestos} pagina={paginaRepuestos} porPagina={porPagina} clave="paginaRepuestos" reiniciar={claves} />
+          }
+        />
       </div>
     </>
   );
 }
 
-function Leyenda({ filas }: { filas: Gasto[] }) {
+function Leyenda({ porPersona }: { porPersona: Record<string, number> }) {
   return (
     <ul aria-label="Total por quién pagó" className="flex flex-wrap gap-2">
       {RESPONSABLES.map((r) => (
@@ -243,7 +296,7 @@ function Leyenda({ filas }: { filas: Gasto[] }) {
           <span aria-hidden className={`size-3 rounded ${r.clase}`} />
           <span className="font-medium text-tinta">{r.nombre}</span>
           <span className="tabular-nums text-tenue">
-            {formatoQ(suma(filas.filter((g) => g.pagadoPor === r.nombre)))}
+            {formatoQ(porPersona[r.nombre] ?? 0)}
           </span>
         </li>
       ))}
@@ -255,10 +308,12 @@ function TablaGastos({
   titulo,
   filas,
   total,
+  paginacion,
 }: {
   titulo: string;
   filas: Gasto[];
   total: number;
+  paginacion: ReactNode;
 }) {
   const esDiesel = titulo === "Diésel";
   const icono = esDiesel ? "bomba" : "llave";
@@ -333,7 +388,7 @@ function TablaGastos({
                     <td className="font-medium text-tinta">{g.descripcion}</td>
                     <td>
                       <span
-                        className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium text-tinta ring-1 ring-black/5 ${colorDe(g.pagadoPor)}`}
+                        className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-black/5 ${colorDe(g.pagadoPor)} ${textoDe(g.pagadoPor)}`}
                       >
                         {g.pagadoPor}
                       </span>
@@ -354,6 +409,7 @@ function TablaGastos({
               </tfoot>
             </table>
           </div>
+          {paginacion}
         </>
       )}
     </Tarjeta>
