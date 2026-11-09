@@ -10,7 +10,7 @@ import {
 import { ESTATUS_VIAJE } from "@/lib/constantes";
 import { camiones, db, pilotos, tarifas, viajes } from "@/lib/db";
 import { paginacion, param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
-import { anioSemana, formatoFecha, formatoQ, hoyISO, rangoSemana, cantidad } from "@/lib/formato";
+import { anioSemana, formatoFecha, formatoQ, horaFecha, hoyISO, rangoSemana, cantidad } from "@/lib/formato";
 import { BORDE_ESTATUS } from "@/components/estatus";
 import { Paginacion } from "@/components/paginacion";
 import {
@@ -151,6 +151,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
       producto: viajes.producto,
       estatus: viajes.estatus,
       tarifaFlete: viajes.tarifaFlete,
+      enRutaEn: viajes.enRutaEn,
+      entregadoEn: viajes.entregadoEn,
     })
     .from(viajes)
     .innerJoin(camiones, eq(viajes.camionId, camiones.id))
@@ -437,6 +439,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                         <td className="font-mono text-xs font-semibold text-tenue max-2xl:hidden">{f.planta}</td>
                         <td>
                           <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+                          <MarcaApp viaje={f} />
                         </td>
                         <td className="text-right whitespace-nowrap">
                           {cancelado ? (
@@ -504,7 +507,20 @@ type FilaViaje = {
   producto: string;
   estatus: Estatus;
   tarifaFlete: number;
+  enRutaEn: Date | null;
+  entregadoEn: Date | null;
 };
+
+// Si el chofer cambió el estatus actual desde su app, cuándo lo hizo (hora de Guatemala).
+function MarcaApp({ viaje: f }: { viaje: FilaViaje }) {
+  const momento = f.estatus === "En ruta" ? f.enRutaEn : f.estatus === "Entregado" ? f.entregadoEn : null;
+  if (!momento) return null;
+  return (
+    <span className="mt-1 block text-[11px] leading-4 whitespace-nowrap text-tenue tabular-nums">
+      desde la app · {horaFecha(momento)}
+    </span>
+  );
+}
 
 const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -611,7 +627,10 @@ function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
             {f.pedido}
           </p>
         </div>
-        <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+        <div className="flex shrink-0 flex-col items-end">
+          <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+          <MarcaApp viaje={f} />
+        </div>
       </div>
 
       <div className="mt-2.5 flex items-start gap-2">

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import {
@@ -91,11 +92,18 @@ export async function crearViaje(_: Estado, form: FormData) {
   });
 }
 
+// en_ruta_en / entregado_en solo los pone la app del chofer. Si la oficina pone
+// el viaje En ruta o Entregado a mano, se borra esa hora para que la lista no
+// diga "desde la app" por un cambio que hizo la oficina.
 export async function cambiarEstatusViaje(id: number, estatus: string) {
   if (!ESTATUS_VIAJE.includes(estatus as never)) return;
   await db
     .update(viajes)
-    .set({ estatus: estatus as (typeof ESTATUS_VIAJE)[number] })
+    .set({
+      estatus: estatus as (typeof ESTATUS_VIAJE)[number],
+      ...(estatus === "En ruta" && { enRutaEn: null }),
+      ...(estatus === "Entregado" && { entregadoEn: null }),
+    })
     .where(eq(viajes.id, id));
   refresh();
 }
@@ -172,6 +180,23 @@ export async function crearPiloto(_: Estado, form: FormData) {
       base: numero(form, "base"),
     }),
   );
+}
+
+// Enlace personal a la app de choferes (/c/<token>). Crear uno nuevo
+// reemplaza el anterior, que deja de funcionar.
+export async function generarEnlaceChofer(pilotoId: number) {
+  if (!Number.isInteger(pilotoId)) return;
+  await db
+    .update(pilotos)
+    .set({ token: randomBytes(24).toString("base64url") })
+    .where(eq(pilotos.id, pilotoId));
+  refresh();
+}
+
+export async function quitarEnlaceChofer(pilotoId: number) {
+  if (!Number.isInteger(pilotoId)) return;
+  await db.update(pilotos).set({ token: null }).where(eq(pilotos.id, pilotoId));
+  refresh();
 }
 
 export async function crearCamion(_: Estado, form: FormData) {

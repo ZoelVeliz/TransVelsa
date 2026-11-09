@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* Mismos colores que la app de oficina (frontend/app/globals.css), tomados del
+   logo: azul rey de la cabina, rojo de las franjas, negro y plata. */
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow), var(--font-geist-sans), sans-serif;
+
+  --color-marca: #1d4ed8;
+  --color-marca-oscuro: #1e3a8a;
+  --color-marca-claro: #dbeafe;
+  --color-marca-50: #eff4ff;
+  --color-acento: #e11d2a;
+  --color-acento-oscuro: #b91c1c;
+  --color-acento-claro: #fee2e2;
+  --color-tinta: #0a0d14;
+  --color-cabina: #000000;
+  --color-cabina-2: #0b0f17;
+  --color-cabina-3: #141a26;
+  --color-plata: #c0c6d0;
+  --color-plata-claro: #e6e9ef;
+
+  --color-fondo: #eef1f6;
+  --color-superficie: #ffffff;
+  --color-borde: #dde2ea;
+  --color-borde-fuerte: #c3cad6;
+  --color-tenue: #4b5363; /* secundario: 7.6:1 sobre blanco, legible al sol */
+
+  --color-exito: #15803d;
+  --color-exito-oscuro: #166534;
+  --color-exito-claro: #dcfce7;
+  --color-alerta: #92400e;
+  --color-alerta-claro: #fef3c7;
+  --color-peligro: #b91c1c;
+  --color-peligro-claro: #fee2e2;
+
+  --radius-tarjeta: 1.25rem;
+  --radius-control: 0.875rem;
+
+  --text-eyebrow: 0.8125rem; /* 13px: etiquetas en mayúsculas */
+  --text-eyebrow--line-height: 1.125rem;
+
+  --shadow-tarjeta: 0 0 0 1px rgb(10 13 20 / 0.03), 0 1px 2px rgb(10 13 20 / 0.06), 0 4px 12px -4px rgb(10 13 20 / 0.08);
+  --shadow-elevada: 0 1px 2px rgb(10 13 20 / 0.05), 0 8px 16px -6px rgb(10 13 20 / 0.14), 0 20px 40px -16px rgb(10 13 20 / 0.26);
+  --shadow-hoja: 0 -12px 40px -8px rgb(0 0 0 / 0.35);
+
+  --animate-entrada: entrada 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-subir: subir 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-brillo: brillo 1.4s ease-in-out infinite;
+  --animate-girar: girar 0.9s linear infinite;
+
+  @keyframes entrada {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes subir {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes brillo {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes girar {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-fondo font-sans text-base text-tinta;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-marca);
+    outline-offset: 2px;
+  }
+  button {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  dialog::backdrop {
+    background: rgb(5 8 14 / 0.6);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* Franja del logo: rojo · filo plata · azul */
+.franja-marca {
+  background: linear-gradient(
+    100deg,
+    var(--color-acento) 0 35%,
+    var(--color-plata) 35% 37%,
+    var(--color-marca) 37% 100%
+  );
+}
+
+/* Franjas diagonales del camión: solo sobre negro */
+.franjas-diagonales {
+  background: repeating-linear-gradient(
+    -60deg,
+    transparent 0 14px,
+    rgb(225 29 42 / 0.9) 14px 22px,
+    transparent 22px 30px,
+    rgb(29 78 216 / 0.9) 30px 38px,
+    transparent 38px 60px
+  );
+  -webkit-mask-image: linear-gradient(to left, #000 20%, transparent 75%);
+  mask-image: linear-gradient(to left, #000 20%, transparent 75%);
+}
+
+@utility cifra {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+}
+
+.esqueleto {
+  position: relative;
+  overflow: hidden;
+  background: rgb(203 213 225 / 0.55);
+}
+.esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+  animation: var(--animate-brillo);
+}

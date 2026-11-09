@@ -14,7 +14,13 @@ import type { Estado } from "@/lib/acciones";
 import { ESTATUS_VIAJE } from "@/lib/constantes";
 import { ESTILO_ESTATUS, PUNTO_ESTATUS } from "./estatus";
 import { Icono, type NombreIcono } from "./iconos";
-import { claseBotonIcono, claseBotonPrimario } from "./ui";
+import {
+  claseBotonIcono,
+  claseBotonPeligro,
+  claseBotonPrimario,
+  claseBotonSecundario,
+  Insignia,
+} from "./ui";
 
 const ERROR_RED = "No se pudo guardar. Revisa tu conexión e intenta de nuevo.";
 
@@ -334,5 +340,188 @@ export function MontoEditable({
       )}
       {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
     </span>
+  );
+}
+
+// Copia al portapapeles; si el navegador no deja (http, permisos), usa el método antiguo.
+async function copiarTexto(valor: string) {
+  try {
+    await navigator.clipboard.writeText(valor);
+    return true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = valor;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    area.remove();
+    return ok;
+  }
+}
+
+// 40px de alto mínimo también con mouse (los botones base bajan a 36px en sm+).
+const alto = "sm:h-10!";
+
+// Enlace personal del chofer a su app: crear, copiar, enviar por WhatsApp,
+// reemplazar o quitar. Sin token, el chofer no tiene acceso.
+export function EnlaceChofer({
+  nombre,
+  enlace,
+  generar,
+  quitar,
+}: {
+  nombre: string;
+  enlace: string | null;
+  generar: () => Promise<void>;
+  quitar: () => Promise<void>;
+}) {
+  const [pendiente, iniciar] = useTransition();
+  const [accionActual, setAccionActual] = useState<"generar" | "quitar" | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!copiado) return;
+    const t = setTimeout(() => setCopiado(false), 2000);
+    return () => clearTimeout(t);
+  }, [copiado]);
+
+  const ejecutar = (cual: "generar" | "quitar", fn: () => Promise<void>) => {
+    setError(null);
+    setAccionActual(cual);
+    iniciar(async () => {
+      try {
+        await fn();
+      } catch {
+        setError(ERROR_RED);
+      }
+    });
+  };
+
+  const giro = <Giro className="size-4 border-current/30 border-t-current" />;
+  const cargando = (cual: "generar" | "quitar") => pendiente && accionActual === cual;
+
+  const encabezado = (
+    <p className="flex items-center gap-2 text-eyebrow font-semibold tracking-[0.1em] text-tenue uppercase">
+      <Icono nombre="celular" className="size-3.5" />
+      App del chofer
+      {enlace ? (
+        <Insignia tono="exito" punto>
+          <span className="tracking-normal normal-case">Con acceso</span>
+        </Insignia>
+      ) : (
+        <span className="font-medium tracking-normal text-suave normal-case">· sin acceso</span>
+      )}
+    </p>
+  );
+
+  if (!enlace) {
+    return (
+      <div className="space-y-2">
+        {encabezado}
+        <button
+          type="button"
+          disabled={pendiente}
+          aria-busy={pendiente}
+          onClick={() => ejecutar("generar", generar)}
+          className={`${claseBotonSecundario} ${alto} disabled:cursor-wait max-sm:w-full`}
+        >
+          {cargando("generar") ? giro : <Icono nombre="enlace" className="size-4" />}
+          Crear enlace
+        </button>
+        {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
+      </div>
+    );
+  }
+
+  const mensaje =
+    `Hola ${nombre}, este es tu enlace a la app de choferes de TransVelsa:\n${enlace}\n\n` +
+    "Ábrelo en tu celular y agrégalo a la pantalla de inicio. Es personal: no lo compartas.";
+
+  return (
+    <div className="space-y-2">
+      {encabezado}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <div className="col-span-2 flex min-w-0 gap-2 sm:min-w-64 sm:flex-1">
+          <span
+            title={enlace}
+            className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-control bg-fondo px-3 ring-1 ring-borde ring-inset sm:h-10"
+          >
+            <Icono nombre="enlace" className="size-4 shrink-0 text-marca" />
+            <span className="truncate font-mono text-xs text-tinta">{enlace.replace(/^https?:\/\//, "")}</span>
+          </span>
+          <button
+            type="button"
+            aria-label={copiado ? "Enlace copiado" : `Copiar enlace de ${nombre}`}
+            onClick={async () => {
+              setError(null);
+              if (await copiarTexto(enlace)) setCopiado(true);
+              else setError("No se pudo copiar. Mantén presionado el enlace para copiarlo a mano.");
+            }}
+            className={`${claseBotonSecundario} ${alto} shrink-0 ${copiado ? "text-green-800 ring-green-300" : ""}`}
+          >
+            <Icono nombre={copiado ? "check" : "copiar"} className="size-4" />
+            <span aria-hidden>{copiado ? "Copiado" : "Copiar"}</span>
+          </button>
+          <span role="status" className="sr-only">
+            {copiado ? "Enlace copiado" : ""}
+          </span>
+        </div>
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(mensaje)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${claseBotonPrimario} ${alto} col-span-2`}
+        >
+          <Icono nombre="mensaje" className="size-4" />
+          Enviar por WhatsApp
+        </a>
+        <button
+          type="button"
+          disabled={pendiente}
+          aria-busy={cargando("generar")}
+          onClick={() => {
+            if (
+              !confirm(
+                `¿Crear un enlace nuevo para ${nombre}?\n\nEl enlace actual dejará de funcionar y tendrás que enviarle el nuevo.`,
+              )
+            )
+              return;
+            ejecutar("generar", generar);
+          }}
+          className={`${claseBotonSecundario} ${alto} disabled:cursor-wait`}
+        >
+          {cargando("generar") ? giro : <Icono nombre="recargar" className="size-4" />}
+          Nuevo enlace
+        </button>
+        <button
+          type="button"
+          disabled={pendiente}
+          aria-busy={cargando("quitar")}
+          onClick={() => {
+            if (
+              !confirm(
+                `¿Quitar el acceso de ${nombre} a la app?\n\nSu enlace dejará de funcionar. Puedes crear uno nuevo cuando quieras.`,
+              )
+            )
+              return;
+            ejecutar("quitar", quitar);
+          }}
+          className={`${claseBotonPeligro} ${alto} disabled:cursor-wait`}
+        >
+          {cargando("quitar") ? giro : <Icono nombre="equis" className="size-4" />}
+          Quitar acceso
+        </button>
+      </div>
+      {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
+    </div>
   );
 }

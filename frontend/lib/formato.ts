@@ -32,10 +32,53 @@ export function rangoSemana(iso: string) {
   return { lunes: correr(1 - dia), domingo: correr(7 - dia) };
 }
 
+// Quincena (1 al 15, o 16 a fin de mes) que contiene la fecha. `correr` mueve
+// tantas quincenas hacia atrás (-1) o adelante (+1).
+export function rangoQuincena(iso: string, correr = 0) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const indice = (a * 12 + (m - 1)) * 2 + (d > 15 ? 1 : 0) + correr;
+  const mes = Math.floor(indice / 2);
+  const anio = Math.floor(mes / 12);
+  const mm = String((mes % 12) + 1).padStart(2, "0");
+  const ultimo = new Date(Date.UTC(anio, (mes % 12) + 1, 0)).getUTCDate();
+  return indice % 2 === 0
+    ? { desde: `${anio}-${mm}-01`, hasta: `${anio}-${mm}-15` }
+    : { desde: `${anio}-${mm}-16`, hasta: `${anio}-${mm}-${ultimo}` };
+}
+
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// "2026-11-01", "2026-11-15" -> "1 al 15 nov 2026"; abrevia lo que se repite.
+export function textoRango(desde: string, hasta: string) {
+  const [a1, m1, d1] = desde.split("-").map(Number);
+  const [a2, m2, d2] = hasta.split("-").map(Number);
+  const fin = `${d2} ${MESES[m2 - 1]} ${a2}`;
+  if (desde === hasta) return fin;
+  if (a1 !== a2) return `${d1} ${MESES[m1 - 1]} ${a1} al ${fin}`;
+  if (m1 !== m2) return `${d1} ${MESES[m1 - 1]} al ${fin}`;
+  return `${d1} al ${fin}`;
+}
+
 export function hoyISO() {
   return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/Guatemala",
   });
+}
+
+const horaGuatemala = new Intl.DateTimeFormat("es-GT", {
+  timeZone: "America/Guatemala",
+  hour: "2-digit",
+  minute: "2-digit",
+  day: "2-digit",
+  month: "2-digit",
+  hourCycle: "h23",
+});
+
+// Momento exacto -> "14:05 16/11" en hora de Guatemala.
+export function horaFecha(momento: Date) {
+  const p = Object.fromEntries(horaGuatemala.formatToParts(momento).map((x) => [x.type, x.value]));
+  const dos = (v: string) => v.padStart(2, "0");
+  return `${dos(p.hour)}:${dos(p.minute)} ${dos(p.day)}/${dos(p.month)}`;
 }
 
 const quetzalesCorto = new Intl.NumberFormat("es-GT", {

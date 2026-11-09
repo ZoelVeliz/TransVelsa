@@ -7,9 +7,9 @@ import { Icono, type NombreIcono } from "./iconos";
 
 const enlaces: { href: string; texto: string; corto: string; icono: NombreIcono }[] = [
   { href: "/viajes", texto: "Viajes", corto: "Viajes", icono: "camion" },
+  { href: "/choferes", texto: "Tarifario y choferes", corto: "Choferes", icono: "usuarios" },
   { href: "/gastos", texto: "Diésel y gastos", corto: "Gastos", icono: "bomba" },
   { href: "/movimientos", texto: "Caja y cuentas", corto: "Caja", icono: "billetera" },
-  { href: "/choferes", texto: "Tarifario y choferes", corto: "Choferes", icono: "usuarios" },
   { href: "/reportes", texto: "Reportes", corto: "Reportes", icono: "grafica" },
 ];
 

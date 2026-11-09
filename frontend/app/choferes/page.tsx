@@ -1,5 +1,6 @@
-import { and, asc, between, count, desc, eq, max, min, sum } from "drizzle-orm";
+import { and, asc, between, count, desc, eq, sum } from "drizzle-orm";
 import { io } from "next/cache";
+import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import {
   actualizarMontoTarifa,
@@ -10,6 +11,8 @@ import {
   crearMovimiento,
   crearPiloto,
   crearTarifa,
+  generarEnlaceChofer,
+  quitarEnlaceChofer,
 } from "@/lib/acciones";
 import { TIPOS_MOVIMIENTO } from "@/lib/constantes";
 import {
@@ -20,11 +23,20 @@ import {
   tarifas,
   viajes,
 } from "@/lib/db";
-import { paramNumero, type Params } from "@/lib/filtros";
+import { paramFecha, type Params } from "@/lib/filtros";
 import { calcularLiquidacion } from "@/lib/liquidacion";
-import { anioSemana, cantidad, formatoFecha, formatoQ, hoyISO } from "@/lib/formato";
+import {
+  cantidad,
+  formatoFecha,
+  formatoQ,
+  hoyISO,
+  rangoQuincena,
+  rangoSemana,
+  textoRango,
+} from "@/lib/formato";
 import {
   BotonBorrar,
+  EnlaceChofer,
   Formulario,
   MontoEditable,
 } from "@/components/interactivos";
@@ -90,23 +102,25 @@ function Etiqueta({ children, className = "" }: { children: ReactNode; className
   );
 }
 
+// Dirección pública de la app de choferes; cada chofer entra con <url>/c/<token>.
+function urlAppChoferes() {
+  return (process.env.CHOFERES_URL || "http://localhost:3001").replace(/\/+$/, "");
+}
+
 async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
   // La fecha de hoy se lee por visita, no en el prerender (Cache Components).
   await io();
 
-  // Por defecto se liquida el rango de semanas con viajes del año más reciente.
-  const [rangoDatos] = await db
-    .select({ anio: max(viajes.anio) })
-    .from(viajes);
-  const anio = paramNumero(sp, "anio") ?? rangoDatos?.anio ?? anioSemana(hoyISO()).anio;
-  const [rangoAnio] = await db
-    .select({ desde: min(viajes.semana), hasta: max(viajes.semana) })
-    .from(viajes)
-    .where(eq(viajes.anio, anio));
-  const actual = anioSemana(hoyISO()).semana;
-  const desde = paramNumero(sp, "desde") ?? rangoAnio?.desde ?? actual;
-  const hasta = paramNumero(sp, "hasta") ?? rangoAnio?.hasta ?? actual;
+  // A los pilotos se les paga cada 15 y fin de mes: por defecto, la quincena de hoy.
+  const hoy = hoyISO();
+  const quincena = rangoQuincena(hoy);
+  // Si falta alguna fecha o no es válida, se usa la quincena completa.
+  const pedidaA = paramFecha(sp, "fechaDesde");
+  const pedidaB = paramFecha(sp, "fechaHasta");
+  const [fechaA, fechaB] =
+    pedidaA && pedidaB ? [pedidaA, pedidaB] : [quincena.desde, quincena.hasta];
+  const [desde, hasta] = fechaA <= fechaB ? [fechaA, fechaB] : [fechaB, fechaA];
 
   const [listaPilotos, listaCamiones, listaTarifas, viajesPorPiloto, movimientos] =
     await Promise.all([
@@ -122,8 +136,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         .from(viajes)
         .where(
           and(
-            eq(viajes.anio, anio),
-            between(viajes.semana, desde, hasta),
+            between(viajes.fecha, desde, hasta),
             eq(viajes.estatus, "Entregado"),
           ),
         )
@@ -131,15 +144,22 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
       db
         .select()
         .from(movimientosPiloto)
-        .where(
-          and(
-            eq(movimientosPiloto.anio, anio),
-            between(movimientosPiloto.semana, desde, hasta),
-          ),
-        )
+        .where(between(movimientosPiloto.fecha, desde, hasta))
         .orderBy(desc(movimientosPiloto.fecha)),
     ]);
 
+
+  const appChoferes = urlAppChoferes();
+  const enlaceDe = (p: typeof pilotos.$inferSelect) =>
+    p.token ? `${appChoferes}/c/${p.token}` : null;
+  const controlEnlace = (p: typeof pilotos.$inferSelect) => (
+    <EnlaceChofer
+      nombre={p.nombre}
+      enlace={enlaceDe(p)}
+      generar={generarEnlaceChofer.bind(null, p.id)}
+      quitar={quitarEnlaceChofer.bind(null, p.id)}
+    />
+  );
 
   const pilotosActivos = listaPilotos.filter((p) => p.activo);
   const liquidaciones = pilotosActivos.map((p) => {
@@ -156,33 +176,61 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     (s, l) => s + l.calculo.adelantos + l.calculo.prestamos,
     0,
   );
-  const rango = desde === hasta ? `semana ${desde}` : `semanas ${desde} a ${hasta}`;
+  const rango = textoRango(desde, hasta);
+  const semana = rangoSemana(hoy);
+  const atajos = [
+    { texto: "Esta quincena", corto: "Quincena", ...quincena },
+    { texto: "Quincena anterior", corto: "Anterior", ...rangoQuincena(hoy, -1) },
+    { texto: "Esta semana", corto: "Semana", desde: semana.lunes, hasta: semana.domingo },
+  ];
 
   return (
     <>
       <Tarjeta
         titulo="Liquidación de pilotos"
         icono="billetera"
-        descripcion={`Año ${anio} · ${rango}`}
+        descripcion={`Del ${formatoFecha(desde)} al ${formatoFecha(hasta)}`}
         acciones={
           <Filtros
+            key={`${desde}|${hasta}`}
             action="/choferes"
             boton="Calcular"
-            activos={Boolean(sp.anio || sp.desde || sp.hasta)}
+            activos={desde !== quincena.desde || hasta !== quincena.hasta}
           >
-            <Campo etiqueta="Año" ancho>
-              <input name="anio" type="number" inputMode="numeric" defaultValue={anio} className={`${claseInput} w-20 tabular-nums`} />
+            <Campo etiqueta="Desde">
+              <input name="fechaDesde" type="date" required defaultValue={desde} className={claseInput} />
             </Campo>
-            <Campo etiqueta="Desde semana">
-              <input name="desde" type="number" inputMode="numeric" min="1" max="53" defaultValue={desde} className={`${claseInput} w-20 tabular-nums`} />
-            </Campo>
-            <Campo etiqueta="Hasta semana">
-              <input name="hasta" type="number" inputMode="numeric" min="1" max="53" defaultValue={hasta} className={`${claseInput} w-20 tabular-nums`} />
+            <Campo etiqueta="Hasta">
+              <input name="fechaHasta" type="date" required defaultValue={hasta} className={claseInput} />
             </Campo>
           </Filtros>
         }
       >
         <div className="space-y-5">
+          <nav aria-label="Periodos rápidos" className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+            {atajos.map((a) => {
+              const actual = a.desde === desde && a.hasta === hasta;
+              return (
+                <Link
+                  key={a.texto}
+                  href={`/choferes?fechaDesde=${a.desde}&fechaHasta=${a.hasta}`}
+                  aria-current={actual ? "true" : undefined}
+                  className={`flex min-h-11 flex-col items-center justify-center rounded-interno px-2 py-1.5 text-center text-sm leading-tight font-medium ring-1 ring-inset transition-colors sm:min-h-10 sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3.5 sm:py-0 ${
+                    actual
+                      ? "bg-tinta text-white ring-tinta"
+                      : "bg-superficie text-suave ring-borde [@media(hover:hover)]:hover:bg-fondo [@media(hover:hover)]:hover:text-tinta"
+                  }`}
+                >
+                  <span className="sm:hidden">{a.corto}</span>
+                  <span className="max-sm:hidden">{a.texto}</span>
+                  <span className={`whitespace-nowrap text-xs tabular-nums ${actual ? "text-plata" : "text-tenue"}`}>
+                    {textoRango(a.desde, a.hasta).replace(/ \d{4}/g, "")}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
           {liquidaciones.length > 0 && (
             <dl className="grid grid-cols-2 overflow-hidden rounded-interno bg-fondo ring-1 ring-borde ring-inset sm:grid-cols-3">
               <div className="relative isolate col-span-2 overflow-hidden bg-tinta px-4 py-3.5 text-white sm:col-span-1">
@@ -252,7 +300,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           {listaPilotos.length > 0 && (
             <PanelAlta
               titulo="Registrar adelanto o préstamo"
-              descripcion="Se descuenta de la liquidación de la semana en que cae su fecha."
+              descripcion="Se descuenta de la liquidación del periodo en que cae su fecha."
             >
               <Formulario accion={crearMovimiento} textoBoton="Registrar">
                 <Campo etiqueta="Piloto">
@@ -463,26 +511,29 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
               {/* Celular: lista compacta. */}
               <ul className="divide-y divide-borde sm:hidden">
                 {listaPilotos.map((p) => (
-                  <li key={p.id} className={`flex items-center gap-3 px-4 py-3 ${p.activo ? "" : "bg-fondo"}`}>
-                    <Avatar nombre={p.nombre} />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium leading-snug text-tinta wrap-break-word">{p.nombre}</p>
-                      {!p.activo && (
-                        <span className="mt-1 inline-block">
-                          <Insignia>Inactivo</Insignia>
-                        </span>
-                      )}
+                  <li key={p.id} className={`space-y-3 px-4 py-3.5 ${p.activo ? "" : "bg-fondo"}`}>
+                    <div className="flex items-center gap-3">
+                      <Avatar nombre={p.nombre} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium leading-snug text-tinta wrap-break-word">{p.nombre}</p>
+                        {!p.activo && (
+                          <span className="mt-1 inline-block">
+                            <Insignia>Inactivo</Insignia>
+                          </span>
+                        )}
+                      </div>
+                      <dl className="shrink-0 space-y-0.5 text-right text-xs">
+                        <div className="flex items-baseline justify-end gap-1.5">
+                          <dt className="text-tenue">Viático</dt>
+                          <dd className="font-semibold text-tinta tabular-nums">{formatoQ(p.viaticoPorViaje)}</dd>
+                        </div>
+                        <div className="flex items-baseline justify-end gap-1.5">
+                          <dt className="text-tenue">Base</dt>
+                          <dd className="font-semibold text-tinta tabular-nums">{formatoQ(p.base)}</dd>
+                        </div>
+                      </dl>
                     </div>
-                    <dl className="shrink-0 space-y-0.5 text-right text-xs">
-                      <div className="flex items-baseline justify-end gap-1.5">
-                        <dt className="text-tenue">Viático</dt>
-                        <dd className="font-semibold text-tinta tabular-nums">{formatoQ(p.viaticoPorViaje)}</dd>
-                      </div>
-                      <div className="flex items-baseline justify-end gap-1.5">
-                        <dt className="text-tenue">Base</dt>
-                        <dd className="font-semibold text-tinta tabular-nums">{formatoQ(p.base)}</dd>
-                      </div>
-                    </dl>
+                    {controlEnlace(p)}
                   </li>
                 ))}
               </ul>
@@ -495,9 +546,9 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                       <th className="text-right">Base</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {listaPilotos.map((p) => (
-                      <tr key={p.id} className={`${claseFila} ${p.activo ? "" : "bg-fondo"}`}>
+                  {listaPilotos.map((p) => (
+                    <tbody key={p.id} className={`${claseFila} ${p.activo ? "" : "bg-fondo"}`}>
+                      <tr className="[&>td]:pb-2!">
                         <td>
                           <span className="inline-flex flex-wrap items-center gap-2 font-medium text-tinta">
                             <Avatar nombre={p.nombre} />
@@ -508,8 +559,13 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                         <td className="whitespace-nowrap text-right font-medium tabular-nums">{formatoQ(p.viaticoPorViaje)}</td>
                         <td className="whitespace-nowrap text-right font-medium tabular-nums">{formatoQ(p.base)}</td>
                       </tr>
-                    ))}
-                  </tbody>
+                      <tr>
+                        <td colSpan={3} className="pt-0! pb-3.5!">
+                          {controlEnlace(p)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  ))}
                 </table>
               </div>
             </>

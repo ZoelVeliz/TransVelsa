@@ -10,10 +10,15 @@ export function paramNumero(sp: Params, clave: string) {
   return Number.isInteger(v) && v > 0 ? v : undefined;
 }
 
-// Fecha "AAAA-MM-DD" tal como la envía un <input type="date">.
+// Fecha "AAAA-MM-DD" tal como la envía un <input type="date">; descarta las
+// que no existen en el calendario (2026-02-30, 0000-00-00).
 export function paramFecha(sp: Params, clave: string) {
   const v = param(sp, clave);
-  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+  const [a, m, d] = v.split("-").map(Number);
+  const fecha = new Date(Date.UTC(a, m - 1, d));
+  const valida = a >= 1 && fecha.getUTCMonth() === m - 1 && fecha.getUTCDate() === d;
+  return valida ? v : undefined;
 }
 
 export const TAMANOS_PAGINA = [5, 10, 20] as const;

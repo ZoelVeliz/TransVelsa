@@ -43,6 +43,8 @@ export const pilotos = pgTable("pilotos", {
   viaticoPorViaje: dinero("viatico_por_viaje").notNull().default(75),
   base: dinero("base").notNull().default(1500),
   activo: boolean("activo").notNull().default(true),
+  // Secreto del enlace personal a la app de choferes; null = sin acceso.
+  token: text("token").unique(),
 });
 
 export const camiones = pgTable("camiones", {
@@ -84,6 +86,9 @@ export const viajes = pgTable("viajes", {
   // posteriores en el tarifario no alteren viajes ya hechos.
   tarifaFlete: dinero("tarifa_flete").notNull(),
   pagoChofer: dinero("pago_chofer").notNull().default(150),
+  // Cuándo el chofer marcó el viaje En ruta / Entregado desde su app.
+  enRutaEn: timestamp("en_ruta_en"),
+  entregadoEn: timestamp("entregado_en"),
   creadoEn: timestamp("creado_en").notNull().defaultNow(),
 });
 
