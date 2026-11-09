@@ -1,8 +1,8 @@
-import Form from "next/form";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatoQ } from "@/lib/formato";
 import { Icono, type NombreIcono } from "./iconos";
+import { BotonFiltrar, FormFiltros } from "./filtros";
 import { PlegableMovil } from "./plegable";
 
 export { Icono, type NombreIcono } from "./iconos";
@@ -230,10 +230,7 @@ export function Filtros({
   const contenido = (
     <>
       {children}
-      <button className={`${claseBotonSecundario} max-sm:col-span-2`}>
-        <Icono nombre="filtro" />
-        {boton}
-      </button>
+      <BotonFiltrar className={`${claseBotonSecundario} max-sm:col-span-2`}>{boton}</BotonFiltrar>
       {activos && (
         <Link href={limpiar} className={`${claseBotonFantasma} max-sm:col-span-2`}>
           <Icono nombre="equis" />
@@ -243,12 +240,12 @@ export function Filtros({
     </>
   );
   return (
-    <Form
+    <FormFiltros
       action={action}
       className="grid w-full grid-cols-2 items-end gap-x-2.5 gap-y-3 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5 max-sm:[&>select]:w-full"
     >
       {plegable ? <PlegableMovil activos={activos}>{contenido}</PlegableMovil> : contenido}
-    </Form>
+    </FormFiltros>
   );
 }
 
@@ -389,8 +386,9 @@ export function Monto({
   );
 }
 
-/** Envoltura de tabla con scroll horizontal propio (nunca de la página). */
-export const claseContenedorTabla = "overflow-x-auto scrollbar-thin";
+/** Envoltura de tabla con scroll horizontal propio (nunca de la página).
+ * `relative`: los sr-only (absolute) de las celdas quedan dentro y no ensanchan la página. */
+export const claseContenedorTabla = "relative overflow-x-auto scrollbar-thin";
 export const claseTabla =
   "w-full text-sm [&_td]:px-3 [&_td]:py-3 [&_td]:align-middle [&_th]:px-3 [&_th]:py-2.5 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:last-child]:pr-4 sm:[&_td:first-child]:pl-5 sm:[&_th:first-child]:pl-5 sm:[&_td:last-child]:pr-5 sm:[&_th:last-child]:pr-5";
 export const claseThead =
@@ -496,7 +494,7 @@ const acotar = (n: number) => Math.min(100, Math.max(0, Number.isFinite(n) ? n :
 
 // Cifra: se encoge en celular (2 columnas) y crece por pasos en pantallas grandes.
 const claseCifraKpi =
-  "mt-3 text-[clamp(1.125rem,5.6vw,1.625rem)] leading-tight font-semibold tracking-tight wrap-break-word tabular-nums sm:text-kpi xl:text-kpi 2xl:text-kpi-lg";
+  "mt-3 text-[clamp(0.9375rem,12.5cqi,1.625rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums max-sm:truncate sm:text-kpi sm:wrap-break-word sm:whitespace-normal xl:text-kpi 2xl:text-kpi-lg";
 
 export function Kpi({
   etiqueta,
@@ -514,7 +512,7 @@ export function Kpi({
       <div
         title={`${etiqueta}: ${valor}`}
         style={estilo}
-        className="relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-tinta p-4 text-white shadow-elevada ring-1 ring-white/5 animate-entrada sm:p-5"
+        className="@container relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-tinta p-4 text-white shadow-elevada ring-1 ring-white/5 animate-entrada sm:p-5"
       >
         <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-30" />
         <div
@@ -554,7 +552,7 @@ export function Kpi({
     <div
       title={`${etiqueta}: ${valor}`}
       style={estilo}
-      className="group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada"
+      className="@container group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="line-clamp-2 min-w-0 text-eyebrow font-semibold uppercase tracking-[0.1em] text-tenue">{etiqueta}</p>

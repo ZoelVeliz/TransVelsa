@@ -40,6 +40,11 @@ const responsable = (nombre: string) => RESPONSABLES.find((r) => r.nombre === no
 const colorDe = (nombre: string) => responsable(nombre)?.clase ?? "bg-slate-200";
 const textoDe = (nombre: string) => responsable(nombre)?.texto ?? "text-tinta";
 
+// Valores únicos de los datos; incluye el filtrado aunque no tenga registros,
+// para que el select muestre lo que dice la URL.
+const opciones = (valores: number[], actual?: number) =>
+  [...new Set(actual && !valores.includes(actual) ? [actual, ...valores] : valores)];
+
 const porcentaje = (parte: number, total: number) =>
   total > 0 ? Math.round((parte / total) * 100) : 0;
 
@@ -239,6 +244,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 <input
                   name="descripcion"
                   required
+                  autoComplete="off"
+                  enterKeyHint="done"
                   placeholder="Ej. Carga en Escuintla"
                   className={`${claseInput} sm:w-72`}
                 />
@@ -254,6 +261,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   <input
                     name="monto"
                     type="number"
+                    autoComplete="off"
                     inputMode="decimal"
                     step="0.01"
                     min="0"
@@ -268,6 +276,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 <input
                   name="semana"
                   type="number"
+                  autoComplete="off"
                   inputMode="numeric"
                   min="1"
                   max="53"
@@ -294,7 +303,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           <Campo etiqueta="Año">
             <select name="anio" defaultValue={filtro.anio ?? ""} className={`${claseInput} sm:w-28`}>
               <option value="">Todos</option>
-              {[...new Set(semanas.map((s) => s.anio))].map((a) => (
+              {opciones(semanas.map((s) => s.anio), filtro.anio).map((a) => (
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>
@@ -302,7 +311,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           <Campo etiqueta="Semana">
             <select name="semana" defaultValue={filtro.semana ?? ""} className={`${claseInput} sm:w-36`}>
               <option value="">Todas</option>
-              {[...new Set(semanas.map((s) => s.semana))].map((s) => (
+              {opciones(semanas.map((s) => s.semana), filtro.semana).map((s) => (
                 <option key={s} value={s}>Semana {s}</option>
               ))}
             </select>
@@ -324,11 +333,14 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         </Filtros>
         <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
           {hayFiltros ? (
-            contexto.map((c) => (
-              <Insignia key={c} tono="marca" punto>
-                {c}
-              </Insignia>
-            ))
+            // En celular el botón "Filtros" ya resume lo aplicado; aquí no se repite.
+            <span className="contents max-sm:hidden">
+              {contexto.map((c) => (
+                <Insignia key={c} tono="marca" punto>
+                  {c}
+                </Insignia>
+              ))}
+            </span>
           ) : (
             <Insignia tono="neutro" icono="calendario">
               Todo el historial
@@ -445,9 +457,13 @@ function QuienPago({
   );
 }
 
+const preguntaBorrar = (g: Gasto) =>
+  `¿Borrar el gasto "${g.descripcion}" del ${formatoFecha(g.fecha)} por ${formatoQ(g.monto)}?`;
+
 function ChipResponsable({ nombre }: { nombre: string }) {
   return (
     <span
+      data-responsable={nombre}
       className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-black/5 ${colorDe(nombre)} ${textoDe(nombre)}`}
     >
       {nombre}
@@ -523,7 +539,7 @@ function TablaGastos({
                 <span aria-hidden className={`absolute inset-y-0 left-0 w-1 ${colorDe(g.pagadoPor)}`} />
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 font-medium leading-snug wrap-break-word text-tinta">
+                    <p className="font-medium leading-snug wrap-break-word text-tinta">
                       {g.descripcion}
                     </p>
                     <p className="mt-1 text-xs text-tenue tabular-nums">
@@ -539,7 +555,7 @@ function TablaGastos({
                     Pagó <ChipResponsable nombre={g.pagadoPor} />
                   </span>
                   <span className="-my-1.5 -mr-1.5">
-                    <BotonBorrar accion={borrarGasto.bind(null, g.id)} />
+                    <BotonBorrar accion={borrarGasto.bind(null, g.id)} pregunta={preguntaBorrar(g)} />
                   </span>
                 </div>
               </li>
@@ -549,7 +565,15 @@ function TablaGastos({
             </li>
           </ul>
           <div className={`hidden md:block ${claseContenedorTabla}`}>
-            <table className={claseTabla}>
+            {/* Anchos fijos: Diésel y Repuestos quedan alineadas una bajo la otra. */}
+            <table className={`${claseTabla} lg:table-fixed`}>
+              <colgroup>
+                <col className="lg:w-36" />
+                <col />
+                <col className="lg:w-36" />
+                <col className="lg:w-36" />
+                <col className="w-14" />
+              </colgroup>
               <thead className={claseThead}>
                 <tr>
                   <th>Fecha</th>
@@ -578,7 +602,7 @@ function TablaGastos({
                       {formatoQ(g.monto)}
                     </td>
                     <td className="text-right">
-                      <BotonBorrar accion={borrarGasto.bind(null, g.id)} />
+                      <BotonBorrar accion={borrarGasto.bind(null, g.id)} pregunta={preguntaBorrar(g)} />
                     </td>
                   </tr>
                 ))}

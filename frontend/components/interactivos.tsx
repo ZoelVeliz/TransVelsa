@@ -4,6 +4,7 @@ import {
   startTransition,
   useActionState,
   useEffect,
+  useOptimistic,
   useRef,
   useState,
   useTransition,
@@ -15,7 +16,43 @@ import { ESTILO_ESTATUS, PUNTO_ESTATUS } from "./estatus";
 import { Icono, type NombreIcono } from "./iconos";
 import { claseBotonIcono, claseBotonPrimario } from "./ui";
 
+const ERROR_RED = "No se pudo guardar. Revisa tu conexión e intenta de nuevo.";
+
+// Aviso flotante de error (sobre la barra inferior en celular). Se cierra solo.
+function AvisoError({ mensaje, alCerrar }: { mensaje: string; alCerrar: () => void }) {
+  const cerrar = useRef(alCerrar);
+  useEffect(() => {
+    cerrar.current = alCerrar;
+  });
+  useEffect(() => {
+    const t = setTimeout(() => cerrar.current(), 6000);
+    return () => clearTimeout(t);
+  }, [mensaje]);
+  return (
+    <div
+      role="alert"
+      className="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex items-start gap-2.5 rounded-control bg-tinta py-2.5 pr-1.5 pl-3.5 text-left text-sm font-medium whitespace-normal text-white shadow-elevada ring-1 ring-white/10 animate-aparecer md:right-6 md:bottom-6 md:left-auto md:w-96"
+    >
+      <Icono nombre="alerta" className="mt-0.5 size-4 shrink-0 text-red-300" />
+      <span className="min-w-0 flex-1 py-px">{mensaje}</span>
+      <button
+        type="button"
+        onClick={alCerrar}
+        aria-label="Cerrar aviso"
+        className="-my-1 grid size-8 shrink-0 place-items-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 max-md:size-10"
+      >
+        <Icono nombre="equis" className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function Giro({ className = "size-4 border-white/40 border-t-white" }: { className?: string }) {
+  return <span aria-hidden className={`shrink-0 animate-spin rounded-full border-2 ${className}`} />;
+}
+
 // Formulario de alta: muestra el error del servidor y solo se limpia si se guardó bien.
+// Si la red falla, avisa y conserva lo escrito para reintentar.
 export function Formulario({
   accion,
   children,
@@ -27,7 +64,13 @@ export function Formulario({
   textoBoton?: string;
   icono?: NombreIcono;
 }) {
-  const [estado, enviar, pendiente] = useActionState(accion, {});
+  const [estado, enviar, pendiente] = useActionState(async (previo: Estado, form: FormData) => {
+    try {
+      return await accion(previo, form);
+    } catch {
+      return { error: ERROR_RED };
+    }
+  }, {});
   const [guardado, setGuardado] = useState(false);
   const ref = useRef<HTMLFormElement>(null);
 
@@ -44,37 +87,49 @@ export function Formulario({
   return (
     <form
       ref={ref}
+      aria-busy={pendiente}
       onSubmit={(e) => {
         e.preventDefault();
+        if (pendiente) return;
+        setGuardado(false);
         const datos = new FormData(e.currentTarget);
         startTransition(() => enviar(datos));
       }}
       className="grid grid-cols-2 gap-x-2.5 gap-y-3 sm:flex sm:flex-wrap sm:items-end sm:gap-3"
     >
       {children}
-      <button disabled={pendiente} className={`${claseBotonPrimario} max-sm:col-span-2`}>
-        {pendiente ? (
-          <>
-            <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            Guardando…
-          </>
-        ) : (
-          <>
-            <Icono nombre={icono} />
+      {/* Las dos capas ocupan la misma celda: el botón no cambia de ancho al guardar. */}
+      <button
+        disabled={pendiente}
+        className={`${claseBotonPrimario} disabled:cursor-wait max-sm:col-span-2`}
+      >
+        <span className="grid">
+          <span
+            className={`col-start-1 row-start-1 inline-flex items-center justify-center gap-2 ${pendiente ? "invisible" : ""}`}
+          >
+            <Icono nombre={icono} className="size-4 shrink-0" />
             {textoBoton}
-          </>
-        )}
+          </span>
+          <span
+            className={`col-start-1 row-start-1 inline-flex items-center justify-center gap-2 ${pendiente ? "" : "invisible"}`}
+          >
+            <Giro className="size-4 border-current/30 border-t-current" />
+            Guardando…
+          </span>
+        </span>
       </button>
-      {guardado && !pendiente && (
-        <p
-          role="status"
-          className="col-span-2 inline-flex items-center gap-1.5 justify-self-start rounded-full bg-exito-claro px-2.5 py-1 text-sm font-medium text-green-800 ring-1 ring-green-300/60 ring-inset animate-aparecer sm:self-center"
-        >
-          <Icono nombre="checkCirculo" className="size-4" />
-          Guardado
-        </p>
-      )}
-      {estado.error && (
+      <div aria-live="polite" className="contents">
+        {guardado && !pendiente && (
+          <p
+            role="status"
+            className="col-span-2 inline-flex items-center gap-1.5 justify-self-start rounded-full bg-exito-claro px-2.5 py-1 text-sm font-medium text-green-800 ring-1 ring-green-300/60 ring-inset animate-aparecer sm:self-center"
+          >
+            <Icono nombre="checkCirculo" className="size-4" />
+            Guardado
+          </p>
+        )}
+      </div>
+      {estado.error && !pendiente && (
         <p
           role="alert"
           className="col-span-2 flex w-full items-start gap-2 rounded-control border-l-[3px] border-l-acento bg-acento-claro px-3 py-2.5 text-sm font-medium text-red-800 ring-1 ring-acento/20 ring-inset animate-aparecer"
@@ -96,26 +151,42 @@ export function BotonBorrar({
   pregunta?: string;
 }) {
   const [pendiente, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  // "¿Borrar el pedido X?" -> "Borrar el pedido X", para distinguir cada fila con lector de pantalla.
+  const etiqueta = pregunta.replace(/^¿/, "").replace(/\?$/, "").trim() || "Borrar";
   return (
-    <button
-      type="button"
-      disabled={pendiente}
-      aria-label="Borrar"
-      title="Borrar"
-      onClick={() => {
-        if (confirm(pregunta)) iniciar(accion);
-      }}
-      className={`${claseBotonIcono} focus-visible:opacity-100 [@media(hover:hover)]:md:opacity-40 [@media(hover:hover)]:md:group-hover:opacity-100`}
-    >
-      {pendiente ? (
-        <span className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-      ) : (
-        <Icono nombre="basura" className="size-4" />
-      )}
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pendiente}
+        aria-label={pendiente ? "Borrando…" : etiqueta}
+        aria-busy={pendiente}
+        title={etiqueta}
+        onClick={() => {
+          if (!confirm(`${pregunta}\n\nEsta acción no se puede deshacer.`)) return;
+          setError(null);
+          iniciar(async () => {
+            try {
+              await accion();
+            } catch {
+              setError("No se pudo borrar. Revisa tu conexión o si el registro tiene otros datos asociados.");
+            }
+          });
+        }}
+        className={`${claseBotonIcono} focus-visible:opacity-100 disabled:cursor-wait [@media(hover:hover)]:md:opacity-40 [@media(hover:hover)]:md:group-hover:opacity-100 ${pendiente ? "opacity-100!" : ""}`}
+      >
+        {pendiente ? (
+          <Giro className="size-3.5 border-current border-r-transparent" />
+        ) : (
+          <Icono nombre="basura" className="size-4" />
+        )}
+      </button>
+      {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
+    </>
   );
 }
 
+// Muestra el estatus nuevo mientras se guarda; si falla vuelve solo al anterior y avisa.
 export function SelectEstatus({
   estatus,
   accion,
@@ -124,33 +195,47 @@ export function SelectEstatus({
   accion: (estatus: string) => Promise<void>;
 }) {
   const [pendiente, iniciar] = useTransition();
+  const [visible, setVisible] = useOptimistic(estatus);
+  const [error, setError] = useState<string | null>(null);
   return (
     <span className="relative inline-flex items-center">
       {pendiente ? (
-        <span className="pointer-events-none absolute left-2 size-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
+        <Giro className="pointer-events-none absolute left-2 size-3 border-current border-r-transparent" />
       ) : (
-        <span className={`pointer-events-none absolute left-2.5 size-1.5 rounded-full ${PUNTO_ESTATUS[estatus]}`} />
+        <span aria-hidden className={`pointer-events-none absolute left-2.5 size-1.5 rounded-full ${PUNTO_ESTATUS[visible]}`} />
       )}
       <select
         aria-label="Estatus"
         aria-busy={pendiente}
-        value={estatus}
+        value={visible}
         disabled={pendiente}
         onChange={(e) => {
-          const nuevo = e.target.value;
-          iniciar(() => accion(nuevo));
+          const nuevo = e.target.value as (typeof ESTATUS_VIAJE)[number];
+          setError(null);
+          iniciar(async () => {
+            setVisible(nuevo);
+            try {
+              await accion(nuevo);
+            } catch {
+              setError(`No se pudo cambiar el estatus a "${nuevo}". Revisa tu conexión e intenta de nuevo.`);
+            }
+          });
         }}
-        className={`h-7 cursor-pointer appearance-none rounded-full bg-none py-0 pr-6 pl-6 text-xs font-semibold shadow-control ring-1 ring-inset transition hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-wait disabled:opacity-60 max-md:h-10 max-md:pr-7 max-md:pl-7 max-md:text-base ${ESTILO_ESTATUS[estatus]}`}
+        className={`h-7 cursor-pointer appearance-none rounded-full bg-none py-0 pr-6 pl-6 text-xs font-semibold shadow-control ring-1 ring-inset transition hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-wait disabled:opacity-70 max-md:h-10 max-md:pr-7 max-md:pl-7 max-md:text-base ${ESTILO_ESTATUS[visible]}`}
       >
         {ESTATUS_VIAJE.map((e) => (
           <option key={e}>{e}</option>
         ))}
       </select>
       <Icono nombre="chevron" className="pointer-events-none absolute right-2 size-3 opacity-60" grosor={2.5} />
+      {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
     </span>
   );
 }
 
+const texto = (n: number) => String(n);
+
+// Se guarda al salir del campo o con Enter; Escape deshace. Si falla, vuelve al monto anterior y avisa.
 export function MontoEditable({
   monto,
   accion,
@@ -161,34 +246,93 @@ export function MontoEditable({
   etiqueta?: string;
 }) {
   const [pendiente, iniciar] = useTransition();
+  const [valor, setValor] = useState(() => texto(monto));
+  const [base, setBase] = useState(monto);
   const [guardado, setGuardado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cancelado = useRef(false);
+
+  // Si el servidor trae otro monto (p. ej. tras guardar), el campo lo refleja.
+  if (base !== monto) {
+    setBase(monto);
+    setValor(texto(monto));
+  }
 
   useEffect(() => {
     if (!guardado) return;
-    const t = setTimeout(() => setGuardado(false), 1000);
+    const t = setTimeout(() => setGuardado(false), 1500);
     return () => clearTimeout(t);
   }, [guardado]);
 
+  const guardar = () => {
+    if (cancelado.current) {
+      cancelado.current = false;
+      return;
+    }
+    const limpio = valor.trim().replace(",", ".");
+    const nuevo = Number(limpio);
+    if (limpio === "" || !Number.isFinite(nuevo) || nuevo < 0) {
+      setValor(texto(monto));
+      if (limpio !== "") setError("Escribe un monto válido (0 o más).");
+      return;
+    }
+    if (nuevo === monto) {
+      setValor(texto(monto));
+      return;
+    }
+    setError(null);
+    setGuardado(false);
+    iniciar(async () => {
+      try {
+        await accion(nuevo);
+        setGuardado(true);
+      } catch {
+        setValor(texto(monto));
+        setError(`${ERROR_RED} Se dejó el monto anterior.`);
+      }
+    });
+  };
+
   return (
     <span className="relative inline-flex items-center">
-      <span aria-hidden className="pointer-events-none absolute left-2.5 text-sm text-tenue">Q</span>
+      {pendiente ? (
+        <Giro className="pointer-events-none absolute left-2.5 size-3.5 border-marca/30 border-t-marca" />
+      ) : (
+        <span aria-hidden className="pointer-events-none absolute left-2.5 text-sm text-tenue">Q</span>
+      )}
       <input
         type="number"
+        inputMode="decimal"
+        autoComplete="off"
+        enterKeyHint="done"
         step="0.01"
         min="0"
         aria-label={etiqueta}
-        defaultValue={monto}
-        disabled={pendiente}
-        onBlur={(e) => {
-          const nuevo = Number(e.target.value);
-          if (nuevo !== monto)
-            iniciar(async () => {
-              await accion(nuevo);
-              setGuardado(true);
-            });
+        aria-busy={pendiente}
+        value={valor}
+        readOnly={pendiente}
+        onChange={(e) => setValor(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.blur();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancelado.current = true;
+            setValor(texto(monto));
+            e.currentTarget.blur();
+          }
         }}
-        className={`h-11 w-32 rounded-control border bg-white pr-2.5 pl-7 text-right text-base tabular-nums shadow-control transition-[border-color,box-shadow] duration-150 hover:border-slate-400 sm:h-9 focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15 disabled:opacity-60 sm:text-sm ${guardado ? "border-exito ring-2 ring-exito/40" : "border-borde-fuerte"}`}
+        onBlur={guardar}
+        className={`h-11 w-32 appearance-none rounded-control border bg-white pr-2.5 pl-7 text-right [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-base tabular-nums shadow-control transition-[border-color,box-shadow,opacity] duration-150 hover:border-slate-400 focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15 sm:h-9 sm:text-sm ${pendiente ? "cursor-wait opacity-60" : ""} ${guardado ? "border-exito ring-2 ring-exito/40" : "border-borde-fuerte"}`}
       />
+      {guardado && (
+        <span role="status" className="sr-only">
+          Monto guardado
+        </span>
+      )}
+      {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
     </span>
   );
 }

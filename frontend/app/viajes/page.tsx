@@ -161,8 +161,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     .offset((pagina - 1) * pag.porPagina);
 
   // La semana y el año actuales siempre aparecen en los filtros, aunque aún no tengan viajes.
-  const anios = [...new Set([actual.anio, ...semanas.map((s) => s.anio)])].sort((a, b) => b - a);
-  const listaSemanas = [...new Set([actual.semana, ...semanas.map((s) => s.semana)])].sort((a, b) => a - b);
+  const anios = [...new Set([actual.anio, ...semanas.map((s) => s.anio), ...(filtro.anio ? [filtro.anio] : [])])].sort((a, b) => b - a);
+  const listaSemanas = [...new Set([actual.semana, ...semanas.map((s) => s.semana), ...[filtro.semanaDesde, filtro.semanaHasta].filter((s): s is number => !!s)])].sort((a, b) => a - b);
   const hayFiltros = Boolean(
     filtro.anio ||
       filtro.semanaDesde ||
@@ -347,10 +347,21 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             icono={porDefecto ? "calendario" : "filtro"}
             titulo={porDefecto ? "Semana sin viajes" : "Sin viajes"}
             accion={
-              hayFiltros && (
-                <Link href={VER_TODOS} className={claseBotonSecundario}>
-                  {porDefecto ? "Ver todos los viajes" : "Limpiar filtros"}
-                </Link>
+              // En la vista por defecto "Ver todos los viajes" ya está en la banda de la semana.
+              porDefecto ? (
+                !faltaFlota && (
+                  <Link href="#nuevo-viaje" className={claseBotonSecundario}>
+                    <Icono nombre="mas" />
+                    Agregar un viaje
+                  </Link>
+                )
+              ) : (
+                hayFiltros && (
+                  <Link href={VER_TODOS} className={claseBotonSecundario}>
+                    <Icono nombre="equis" />
+                    Limpiar filtros
+                  </Link>
+                )
               )
             }
           >
@@ -368,7 +379,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 <TarjetaViaje key={f.id} viaje={f} />
               ))}
               <li>
-                <TotalMovil etiqueta="Total · sin cancelados" valor={formatoQ(total)} />
+                <TotalMovil etiqueta="Total fletes" valor={formatoQ(total)} />
               </li>
             </ul>
 
@@ -381,10 +392,10 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     <th>Destino / Producto</th>
                     <th>Piloto</th>
                     <th>Placa</th>
-                    <th>Planta</th>
+                    <th className="max-2xl:hidden">Planta</th>
                     <th>Estatus</th>
                     <th className="text-right">Tarifa flete</th>
-                    <th>
+                    <th className="relative">
                       <span className="sr-only">Acciones</span>
                     </th>
                   </tr>
@@ -394,9 +405,11 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     const cancelado = f.estatus === "Cancelado";
                     return (
                       <tr key={f.id} className={`${claseFila} ${cancelado ? "bg-slate-50/80 text-slate-600" : ""}`}>
-                        <td className="font-mono text-[13px] font-semibold whitespace-nowrap text-tinta">
-                          <span className="text-suave">#</span>
-                          {f.pedido}
+                        <td className="max-w-36 font-mono text-[13px] font-semibold text-tinta">
+                          <span className="block truncate" title={f.pedido}>
+                            <span className="text-suave">#</span>
+                            {f.pedido}
+                          </span>
                         </td>
                         <td className="whitespace-nowrap">
                           <span className="block font-medium tabular-nums text-tinta">{formatoFecha(f.fecha)}</span>
@@ -404,20 +417,24 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                             Sem. {f.semana} · {f.anio}
                           </span>
                         </td>
-                        <td className="min-w-48">
+                        <td className="min-w-44">
                           <span className="block font-medium leading-snug text-tinta">{f.destino}</span>
                           <span className="block text-xs leading-snug text-tenue">{f.producto}</span>
                         </td>
                         <td>
-                          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <span className="flex min-w-36 items-center gap-2">
                             <Avatar nombre={f.piloto} />
-                            {f.piloto}
+                            <span className="leading-snug">{f.piloto}</span>
                           </span>
                         </td>
                         <td>
                           <Placa placa={f.placa} />
+                          {/* Entre lg y 2xl la planta va bajo la placa para que la tabla quepa sin scroll. */}
+                          <span className="mt-1 block text-xs text-tenue 2xl:hidden">
+                            Planta <span className="font-mono font-semibold">{f.planta}</span>
+                          </span>
                         </td>
-                        <td className="font-mono text-xs font-semibold text-tenue">{f.planta}</td>
+                        <td className="font-mono text-xs font-semibold text-tenue max-2xl:hidden">{f.planta}</td>
                         <td>
                           <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
                         </td>
@@ -442,15 +459,12 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                 </tbody>
                 <tfoot>
                   <tr className={claseTotal}>
-                    <td colSpan={7}>
-                      <span className="flex items-baseline justify-end gap-2">
-                        <span className="text-eyebrow font-semibold tracking-[0.1em] text-tinta uppercase">
-                          Total filtrado
-                        </span>
-                        <span className="text-xs font-normal text-tenue">
-                          {cantidad(activos, "viaje", "viajes")} · sin cancelados
-                        </span>
-                      </span>
+                    {/* La columna Planta se oculta antes de 2xl: el colSpan cambia con ella. */}
+                    <td colSpan={6} className="2xl:hidden">
+                      <EtiquetaTotal activos={activos} />
+                    </td>
+                    <td colSpan={7} className="max-2xl:hidden">
+                      <EtiquetaTotal activos={activos} />
                     </td>
                     <td className="text-right text-base whitespace-nowrap tabular-nums">{formatoQ(total)}</td>
                     <td />
@@ -463,6 +477,15 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         )}
       </Tarjeta>
     </>
+  );
+}
+
+function EtiquetaTotal({ activos }: { activos: number }) {
+  return (
+    <span className="flex items-baseline justify-end gap-2">
+      <span className="text-eyebrow font-semibold tracking-[0.1em] text-tinta uppercase">Total filtrado</span>
+      <span className="text-xs font-normal text-tenue">{cantidad(activos, "viaje", "viajes")} · sin cancelados</span>
+    </span>
   );
 }
 
@@ -583,7 +606,7 @@ function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 pt-0.5">
           <p className={etiquetaMini}>Pedido</p>
-          <p className="truncate font-mono text-[15px] font-semibold text-tinta">
+          <p className="font-mono text-[15px] leading-snug font-semibold wrap-anywhere text-tinta">
             <span className="text-suave">#</span>
             {f.pedido}
           </p>

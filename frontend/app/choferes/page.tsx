@@ -140,6 +140,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         .orderBy(desc(movimientosPiloto.fecha)),
     ]);
 
+
   const pilotosActivos = listaPilotos.filter((p) => p.activo);
   const liquidaciones = pilotosActivos.map((p) => {
     const movs = movimientos.filter((m) => m.pilotoId === p.id);
@@ -164,15 +165,19 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         icono="billetera"
         descripcion={`Año ${anio} · ${rango}`}
         acciones={
-          <Filtros action="/choferes" boton="Calcular">
+          <Filtros
+            action="/choferes"
+            boton="Calcular"
+            activos={Boolean(sp.anio || sp.desde || sp.hasta)}
+          >
             <Campo etiqueta="Año" ancho>
-              <input name="anio" type="number" defaultValue={anio} className={`${claseInput} w-20 tabular-nums`} />
+              <input name="anio" type="number" inputMode="numeric" defaultValue={anio} className={`${claseInput} w-20 tabular-nums`} />
             </Campo>
             <Campo etiqueta="Desde semana">
-              <input name="desde" type="number" min="1" max="53" defaultValue={desde} className={`${claseInput} w-20 tabular-nums`} />
+              <input name="desde" type="number" inputMode="numeric" min="1" max="53" defaultValue={desde} className={`${claseInput} w-20 tabular-nums`} />
             </Campo>
             <Campo etiqueta="Hasta semana">
-              <input name="hasta" type="number" min="1" max="53" defaultValue={hasta} className={`${claseInput} w-20 tabular-nums`} />
+              <input name="hasta" type="number" inputMode="numeric" min="1" max="53" defaultValue={hasta} className={`${claseInput} w-20 tabular-nums`} />
             </Campo>
           </Filtros>
         }
@@ -274,8 +279,9 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     <input
                       name="monto"
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
-                      min="0"
+                      min="0.01"
                       required
                       placeholder="0.00"
                       className={claseEntradaQ}
@@ -283,7 +289,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   </EntradaQ>
                 </Campo>
                 <Campo etiqueta="Nota">
-                  <input name="descripcion" placeholder="Opcional" className={`${claseInput} w-48`} />
+                  <input name="descripcion" placeholder="Opcional" autoComplete="off" className={`${claseInput} w-48`} />
                 </Campo>
               </Formulario>
             </PanelAlta>
@@ -318,10 +324,12 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                         <p className="text-xs leading-5 text-tenue wrap-break-word">{t.producto}</p>
                       </div>
                     </div>
-                    <BotonBorrar
-                      accion={borrarTarifa.bind(null, t.id)}
-                      pregunta={`¿Borrar la tarifa a ${t.destino}?`}
-                    />
+                    <span className="-mt-1 -mr-1 shrink-0">
+                      <BotonBorrar
+                        accion={borrarTarifa.bind(null, t.id)}
+                        pregunta={`¿Borrar la tarifa a ${t.destino} (${t.producto})?`}
+                      />
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5 border-t border-dashed border-borde pt-3">
                     <div className="min-w-0 space-y-1.5 [&>span]:w-full [&_input]:w-full">
@@ -386,7 +394,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                       <td className="w-12 text-right">
                         <BotonBorrar
                           accion={borrarTarifa.bind(null, t.id)}
-                          pregunta={`¿Borrar la tarifa a ${t.destino}?`}
+                          pregunta={`¿Borrar la tarifa a ${t.destino} (${t.producto})?`}
                         />
                       </td>
                     </tr>
@@ -400,16 +408,17 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           <PanelAlta titulo="Nueva tarifa">
             <Formulario accion={crearTarifa} textoBoton="Agregar tarifa">
               <Campo etiqueta="Destino">
-                <input name="destino" required className={`${claseInput} w-44`} />
+                <input name="destino" required autoComplete="off" className={`${claseInput} w-44`} />
               </Campo>
               <Campo etiqueta="Producto">
-                <input name="producto" required className={`${claseInput} w-40`} />
+                <input name="producto" required autoComplete="off" className={`${claseInput} w-40`} />
               </Campo>
               <Campo etiqueta="Tarifa flete">
                 <EntradaQ>
                   <input
                     name="monto"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     min="0"
                     required
@@ -423,6 +432,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   <input
                     name="pagoChofer"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     min="0"
                     required
@@ -508,13 +518,14 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             <PanelAlta titulo="Nuevo piloto">
               <Formulario accion={crearPiloto} textoBoton="Agregar piloto">
                 <Campo etiqueta="Nombre" ancho>
-                  <input name="nombre" required autoComplete="off" className={`${claseInput} w-44`} />
+                  <input name="nombre" required autoComplete="off" autoCapitalize="words" className={`${claseInput} w-44`} />
                 </Campo>
                 <Campo etiqueta="Viático por viaje">
                   <EntradaQ>
                     <input
                       name="viaticoPorViaje"
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
                       min="0"
                       defaultValue="75"
@@ -527,6 +538,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     <input
                       name="base"
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
                       min="0"
                       defaultValue="1500"
@@ -573,6 +585,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                     required
                     placeholder="C123ABC"
                     autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
                     className={`${claseInput} w-36 font-mono tracking-wider uppercase`}
                   />
                 </Campo>
@@ -704,7 +718,16 @@ function Recibo({
               <div className="h-full bg-acento" style={{ width: `${pct(descuentos)}%` }} />
             </div>
             <p className="mt-1.5 text-xs text-tenue">
-              Se descuenta el <span className="font-medium tabular-nums text-tinta">{Math.round(pct(descuentos))}%</span> del total devengado
+              {descuentos > total ? (
+                <>
+                  Los descuentos superan el total devengado por{" "}
+                  <span className="font-medium tabular-nums text-peligro">{formatoQ(descuentos - total)}</span>
+                </>
+              ) : (
+                <>
+                  Se descuenta el <span className="font-medium tabular-nums text-tinta">{Math.round(pct(descuentos))}%</span> del total devengado
+                </>
+              )}
             </p>
           </div>
         )}
@@ -740,9 +763,13 @@ function Recibo({
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 text-xs font-semibold text-tenue transition-colors hover:bg-fondo hover:text-tinta focus-visible:ring-2 focus-visible:ring-marca focus-visible:outline-none focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-2">
               <Icono nombre="lista" className="size-4" />
-              Ver {cantidad(movimientos.length, "adelanto o préstamo", "adelantos y préstamos")}
+              <span>
+                <span className="group-open:hidden">Ver </span>
+                <span className="hidden group-open:inline">Ocultar </span>
+                {cantidad(movimientos.length, "adelanto o préstamo", "adelantos y préstamos")}
+              </span>
             </span>
-            <Icono nombre="chevron" className="size-4 transition-transform group-open:rotate-180" />
+            <Icono nombre="chevron" className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
           </summary>
           <ul className="divide-y divide-borde border-t border-borde bg-fondo/60">
             {movimientos.map((m) => {
@@ -756,11 +783,13 @@ function Recibo({
                     </div>
                     {m.descripcion && <p className="mt-0.5 truncate text-xs text-tenue">{m.descripcion}</p>}
                   </div>
-                  <Monto valor={m.monto} tipo="salida" className="text-sm font-medium" />
-                  <BotonBorrar
-                    accion={borrarMovimiento.bind(null, m.id)}
-                    pregunta={`¿Borrar este ${adelanto ? "adelanto" : "préstamo"}?`}
-                  />
+                  <Monto valor={m.monto} tipo="salida" className="shrink-0 text-sm font-medium" />
+                  <span className="shrink-0">
+                    <BotonBorrar
+                      accion={borrarMovimiento.bind(null, m.id)}
+                      pregunta={`¿Borrar este ${adelanto ? "adelanto" : "préstamo"} de ${formatoQ(m.monto)} del ${formatoFecha(m.fecha)}?`}
+                    />
+                  </span>
                 </li>
               );
             })}

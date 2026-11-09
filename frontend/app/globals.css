@@ -132,6 +132,11 @@
   input[type="number"] {
     font-variant-numeric: tabular-nums;
   }
+  /* Un contenedor con scroll propio debe contener a sus hijos absolute (p. ej.
+     .sr-only en celdas); si no, ensanchan la página entera. */
+  :where(.overflow-x-auto, .overflow-auto) {
+    position: relative;
+  }
   summary::-webkit-details-marker {
     display: none;
   }
@@ -237,3 +242,23 @@ select:not([multiple]):not(.bg-none) {
   }
 }
 
+
+/* <details> se despliega con suavidad donde el navegador lo permite
+   (sin animación si el usuario pide menos movimiento). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (interpolate-size: allow-keywords) {
+    details {
+      interpolate-size: allow-keywords;
+    }
+    details::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size 0.22s ease,
+        content-visibility 0.22s allow-discrete;
+    }
+    details[open]::details-content {
+      block-size: auto;
+    }
+  }
+}

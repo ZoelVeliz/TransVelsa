@@ -72,7 +72,7 @@ export function Paginacion({
                 )}
                 scroll={false}
                 aria-current={t === porPagina ? "true" : undefined}
-                className="grid h-8 min-w-9 place-items-center rounded-md px-2 text-sm font-medium tabular-nums text-tenue transition hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-white aria-[current=true]:text-tinta aria-[current=true]:shadow-tarjeta max-sm:h-9 max-sm:min-w-10"
+                className="grid h-8 min-w-9 place-items-center rounded-md px-2 text-sm font-medium tabular-nums text-tenue transition hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-white aria-[current=true]:text-tinta aria-[current=true]:shadow-tarjeta max-sm:h-10 max-sm:min-w-11"
               >
                 {t}
               </Link>

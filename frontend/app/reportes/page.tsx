@@ -62,6 +62,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const resultado = total.resultado;
   const urlExcel = `/reportes/excel?anio=${anio}&desde=${desde}&hasta=${hasta}`;
   const sinDatos = semanas.length === 0;
+  // Hay filtro si el periodo difiere del que se muestra al entrar sin parámetros.
+  const filtrado = desde !== 1 || hasta !== 53 || (anios.length > 0 && anio !== anios[0]);
   const rango = desde === hasta ? `Semana ${desde}` : `Semanas ${desde}–${hasta}`;
 
   // De mayor a menor, para que el puesto 1 sea quien más pagó.
@@ -74,7 +76,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   return (
     <>
       <BarraHerramientas>
-        <Filtros action="/reportes" boton="Ver reporte">
+        <Filtros action="/reportes" boton="Ver reporte" plegable activos={filtrado} limpiar="/reportes">
           <Campo etiqueta="Año" ancho>
             <select name="anio" defaultValue={anio} className={`${claseInput} sm:w-28`}>
               {(anios.length ? anios : [anio]).map((a) => (
@@ -137,11 +139,14 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             valor: formatoQ(total.gastos),
             icono: "bomba",
             tono: "acento",
-            nota: `Diésel ${formatoQCorto(total.diesel)} · Repuestos ${formatoQCorto(total.repuestos)}`,
+            nota: total.gastos
+              ? `Diésel ${formatoQCorto(total.diesel)} · Repuestos ${formatoQCorto(total.repuestos)}`
+              : "Sin gastos en el rango",
           },
           {
             etiqueta: "Margen",
-            valor: `${total.margen}%`,
+            // Sin ingresos el margen no existe; "0%" haría pensar que se ganó y gastó lo mismo.
+            valor: total.ingresos === 0 ? "—" : `${total.margen}%`,
             icono: "porcentaje",
             tono: total.ingresos === 0 ? "neutro" : total.margen < 0 ? "peligro" : "exito",
             nota: total.ingresos === 0 ? "Sin ingresos en el rango" : "Resultado sobre ingresos",
@@ -164,7 +169,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             icono="grafica"
             titulo="Sin movimiento en este periodo"
             accion={
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className="mx-auto flex w-full max-w-xs flex-col gap-2 sm:w-auto sm:max-w-none sm:flex-row sm:justify-center">
                 <Link href="/viajes" className={claseBotonSecundario}>
                   <Icono nombre="camion" />
                   Ir a viajes
@@ -244,11 +249,13 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
 function BotonExcel({ url, deshabilitado }: { url: string; deshabilitado: boolean }) {
   return (
     <div className="flex flex-col items-stretch gap-1.5 max-sm:w-full sm:items-end">
+      {/* Sin datos no hay href: ni el clic, ni el teclado, ni un lector de pantalla pueden activarlo. */}
       <a
-        href={url}
-        download
+        href={deshabilitado ? undefined : url}
+        download={deshabilitado ? undefined : true}
+        role={deshabilitado ? "link" : undefined}
         aria-disabled={deshabilitado || undefined}
-        tabIndex={deshabilitado ? -1 : undefined}
+        aria-describedby="nota-excel"
         aria-label="Descargar reporte en Excel (XLSX)"
         className={`${claseBotonPrimario} group gap-2.5 sm:h-10 sm:px-4`}
       >
@@ -262,7 +269,7 @@ function BotonExcel({ url, deshabilitado }: { url: string; deshabilitado: boolea
           className="size-4 opacity-80 transition-transform group-hover:translate-y-0.5"
         />
       </a>
-      <span className="text-center text-[11px] leading-4 text-tenue sm:text-right">
+      <span id="nota-excel" className="text-center text-[11px] leading-4 text-tenue sm:text-right">
         {deshabilitado ? "Sin datos para exportar en este rango" : "Exporta el rango seleccionado"}
       </span>
     </div>
@@ -278,6 +285,8 @@ function techoBonito(v: number) {
 }
 
 const MARCAS = [1, 0.75, 0.5, 0.25, 0];
+// Ancho mínimo por semana: en celular caben ~7 y se desliza; en escritorio ~26 sin scroll.
+const ANCHO_COLUMNA = 36;
 
 function TarjetaGrafica({
   semanas,
@@ -352,8 +361,8 @@ function TarjetaGrafica({
 function DatoPie({ etiqueta, punto, children }: { etiqueta: string; punto?: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="flex items-center gap-1.5 text-eyebrow font-semibold uppercase tracking-[0.1em] text-tenue">
-        {punto && <span aria-hidden className={`size-2 rounded-[2px] ${punto}`} />}
+      <dt className="flex items-center gap-1.5 text-eyebrow font-semibold uppercase tracking-widest text-tenue">
+        {punto && <span aria-hidden className={`size-2 rounded-xs ${punto}`} />}
         {etiqueta}
       </dt>
       <dd className="mt-0.5 truncate text-base font-semibold tabular-nums sm:text-lg">{children}</dd>
@@ -369,7 +378,7 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
   const tope = techoBonito(Math.max(1, ...series.flatMap((s) => [s.ingresos, s.gastos])));
   const pct = (v: number) => `${(v / tope) * 100}%`;
   const barra =
-    "w-3 origin-bottom rounded-t-[5px] transition-[height,filter] duration-500 ease-out animate-crecer group-hover:brightness-110 sm:w-4 lg:w-6";
+    "w-full max-w-3 origin-bottom rounded-t-[5px] transition-[height,filter] duration-500 ease-out animate-crecer group-hover:brightness-110 sm:max-w-4 lg:max-w-6";
 
   return (
     <div className="flex gap-2 sm:gap-3">
@@ -392,7 +401,7 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
         {/* Las líneas y el detalle se posicionan respecto a esta caja (fuera del scroll) para que no se recorten. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[calc(16rem-2rem)] sm:h-[calc(18rem-2rem)] lg:h-[calc(20rem-2rem)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-56 sm:h-64 lg:h-72"
         >
           {MARCAS.map((f) => (
             <div
@@ -402,12 +411,14 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
             />
           ))}
         </div>
-        <div className="snap-x overflow-x-auto scrollbar-thin">
+        {/* static: el detalle se posiciona contra la caja de arriba, no contra el contenido que se desliza
+            (globals.css da position: relative a todo .overflow-x-auto). */}
+        <div className="static snap-x overflow-x-auto scrollbar-thin">
           <div
             role="list"
             aria-label="Ingresos y gastos por semana"
-            className="flex h-64 items-end justify-around gap-1 sm:h-72 sm:gap-2 lg:h-80 [&:has(.col:focus-visible)_.col:not(:focus-visible)]:opacity-45 [@media(hover:hover)]:[&:has(.col:hover)_.col:not(:hover)]:opacity-45"
-            style={{ minWidth: `${series.length * 48}px` }}
+            className="flex h-64 items-end justify-around gap-1 sm:h-72 sm:gap-1.5 lg:h-80 [&:has(.col:focus)_.col:not(:focus)]:opacity-45 [@media(hover:hover)]:[&:has(.col:hover)_.col:not(:hover)]:opacity-45 [@media(hover:hover)]:[&:has(.col:hover)_.col:not(:hover)_.tip]:opacity-0"
+            style={{ minWidth: `${series.length * ANCHO_COLUMNA}px` }}
           >
             {series.map((s, i) => (
               <div
@@ -415,23 +426,23 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
                 role="listitem"
                 tabIndex={0}
                 aria-label={`Semana ${s.semana}: ingresos ${formatoQ(s.ingresos)}, gastos ${formatoQ(s.gastos)}, resultado ${firmado(s.resultado)}`}
-                className="col group flex h-full max-w-24 flex-1 snap-start flex-col justify-end outline-none transition-opacity duration-150"
+                className="col group flex h-full min-w-0 max-w-24 flex-1 snap-start flex-col justify-end outline-none transition-opacity duration-150"
               >
-                <div className="flex min-h-0 flex-1 items-end justify-center gap-[3px] rounded-t-lg px-1 transition-colors group-hover:bg-marca-50 group-focus-visible:bg-marca-50 group-focus-visible:ring-2 group-focus-visible:ring-marca">
+                <div className="flex min-h-0 flex-1 items-end justify-center gap-0.75 rounded-t-lg px-1 transition-colors group-hover:bg-marca-50 group-focus:bg-marca-50 group-focus-visible:ring-2 group-focus-visible:ring-marca group-focus-visible:ring-inset">
                   <div
-                    className={`${barra} bg-linear-to-t from-marca to-blue-500 ${s.ingresos > 0 ? "min-h-[2px]" : ""}`}
+                    className={`${barra} bg-linear-to-t from-marca to-blue-500 ${s.ingresos > 0 ? "min-h-0.5" : ""}`}
                     style={{ height: pct(s.ingresos), animationDelay: `${i * 35}ms` }}
                   />
                   <div
-                    className={`${barra} bg-linear-to-t from-acento-oscuro to-acento ${s.gastos > 0 ? "min-h-[2px]" : ""}`}
+                    className={`${barra} bg-linear-to-t from-acento-oscuro to-acento ${s.gastos > 0 ? "min-h-0.5" : ""}`}
                     style={{ height: pct(s.gastos), animationDelay: `${i * 35 + 20}ms` }}
                   />
                 </div>
                 <span
                   aria-hidden
-                  className="flex h-8 shrink-0 flex-col items-center pt-1.5 text-[11px] leading-3.5 tabular-nums text-tenue group-hover:text-tinta group-focus-visible:text-tinta"
+                  className="flex h-8 shrink-0 flex-col items-center pt-1.5 text-[11px] leading-3.5 tabular-nums text-tenue group-hover:text-tinta group-focus:text-tinta"
                 >
-                  <span className="font-medium group-hover:font-semibold">S{s.semana}</span>
+                  <span className="font-medium group-hover:font-semibold group-focus:font-semibold">S{s.semana}</span>
                   {/* Punto de resultado: con forma distinta además del color. */}
                   <span
                     className={`mt-1 text-[9px] leading-none font-bold ${s.resultado < 0 ? "text-peligro" : "text-exito"}`}
@@ -442,7 +453,7 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
                 {/* Del lado contrario a la columna para no taparla. */}
                 <div
                   aria-hidden
-                  className={`pointer-events-none absolute top-1 z-20 w-56 max-w-[calc(100%-0.5rem)] translate-y-1 overflow-hidden rounded-interno bg-cabina-2/95 p-3.5 text-xs text-white opacity-0 shadow-elevada ring-1 ring-white/10 backdrop-blur transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100 ${
+                  className={`tip pointer-events-none absolute top-1 z-10 w-56 max-w-[calc(100%-0.5rem)] translate-y-1 overflow-hidden rounded-interno bg-cabina-2/95 p-3.5 text-xs text-white opacity-0 shadow-elevada ring-1 ring-white/10 backdrop-blur transition group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100 ${
                     i < series.length / 2 ? "right-1" : "left-1"
                   }`}
                 >
@@ -474,7 +485,9 @@ function GraficaSemanal({ semanas }: { semanas: Semana[] }) {
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-superficie sm:hidden"
+          className={`pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-superficie ${
+            series.length > 26 ? "" : "sm:hidden"
+          }`}
         />
       </div>
     </div>

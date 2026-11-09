@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { Icono, type NombreIcono } from "./iconos";
 
@@ -12,6 +12,17 @@ const enlaces: { href: string; texto: string; corto: string; icono: NombreIcono 
   { href: "/choferes", texto: "Tarifario y choferes", corto: "Choferes", icono: "usuarios" },
   { href: "/reportes", texto: "Reportes", corto: "Reportes", icono: "grafica" },
 ];
+
+// Pista fija (sin saltos de layout) mientras carga la sección elegida.
+function PistaCarga({ className }: { className: string }) {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute rounded-full bg-blue-400 transition-opacity duration-150 ${pending ? "animate-pulse opacity-100" : "opacity-0"} ${className}`}
+    />
+  );
+}
 
 const activoEn = (ruta: string, href: string) => ruta === href || ruta.startsWith(`${href}/`);
 
@@ -49,7 +60,7 @@ export function Sidebar() {
               href={e.href}
               aria-current={activo ? "page" : undefined}
               title={e.texto}
-              className="group relative flex items-center rounded-control font-medium text-slate-400 transition-colors duration-150 hover:bg-cabina-3 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 aria-[current=page]:bg-linear-to-r aria-[current=page]:from-white/9 aria-[current=page]:to-white/3 aria-[current=page]:text-white aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] aria-[current=page]:ring-1 aria-[current=page]:ring-white/7 aria-[current=page]:ring-inset md:h-16 md:flex-col md:justify-center md:gap-1 md:px-1 md:text-[10px] lg:h-11 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm"
+              className="group relative flex items-center rounded-control font-medium text-slate-400 transition-colors duration-150 hover:bg-cabina-3 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset aria-[current=page]:bg-linear-to-r aria-[current=page]:from-white/9 aria-[current=page]:to-white/3 aria-[current=page]:text-white aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] aria-[current=page]:ring-1 aria-[current=page]:ring-white/7 aria-[current=page]:ring-inset md:h-16 md:flex-col md:justify-center md:gap-1 md:px-1 md:text-[10px] lg:h-11 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm"
             >
               {activo && (
                 <span aria-hidden className="absolute top-2.5 bottom-2.5 left-0 w-0.75 rounded-r-full bg-acento shadow-[0_0_10px_rgb(225_29_42/0.7)]" />
@@ -63,6 +74,7 @@ export function Sidebar() {
                 nombre="chevronDer"
                 className="ml-auto hidden size-4 text-slate-600 opacity-0 transition group-hover:opacity-100 group-aria-[current=page]:opacity-0 lg:block"
               />
+              <PistaCarga className="inset-x-3 bottom-1 h-0.5" />
             </Link>
           );
         })}
@@ -147,6 +159,7 @@ export function NavegacionMovil() {
                 <Icono nombre={e.icono} className="size-5" grosor={activo ? 2 : 1.75} />
               </span>
               <span className="max-w-full truncate px-0.5">{e.corto}</span>
+              <PistaCarga className="bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2" />
             </Link>
           );
         })}

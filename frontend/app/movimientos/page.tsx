@@ -117,7 +117,6 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   const salidasGeneral = saldos.reduce((s, c) => s + c.salidas, 0);
   const hayFiltro = Boolean(filtro.cuenta || filtro.tipo || filtro.fechaDesde || filtro.fechaHasta);
   const neto = totales.entradas - totales.salidas;
-
   // Celular: los asientos se agrupan por día, en el mismo orden en que llegan.
   const dias: { fecha: string; asientos: Asiento[] }[] = [];
   for (const a of filas) {
@@ -184,63 +183,76 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
 
       <Tarjeta id="nuevo-movimiento" titulo="Nuevo movimiento" icono="mas" descripcion="Ingreso, egreso o transferencia entre cuentas">
         <div className="space-y-3">
+          {/* Tipo primero porque decide los campos. "Hacia" solo aparece con Transferencia (CSS :has,
+              sin JS; el servidor lo ignora en los demás tipos). En celular, Cuenta ocupa toda la fila y
+              con Transferencia comparte la fila con Hacia. */}
           <PanelAlta>
-            <Formulario accion={crearMovimientoCaja} textoBoton="Registrar movimiento">
-              <Campo etiqueta="Cuenta">
-                <select name="cuenta" defaultValue={filtro.cuenta ?? CAJA} className={`${claseInput} sm:min-w-36`}>
-                  {CUENTAS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo etiqueta="Tipo">
-                <select name="tipo" className={`${claseInput} sm:min-w-36`}>
-                  {TIPOS_MOVIMIENTO_CAJA.map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo etiqueta="Hacia (si transfiere)">
-                <select name="cuentaDestino" defaultValue="" className={`${claseInput} sm:min-w-36`}>
-                  <option value="">—</option>
-                  {CUENTAS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo etiqueta="Monto">
-                <span className="relative block sm:w-36">
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm font-medium text-tenue"
-                  >
-                    Q
+            <div className="[&_.campo-hacia]:hidden [&:has(option[value=Transferencia]:checked)_.campo-hacia]:contents max-sm:[&_.campo-cuenta>label]:col-span-2 max-sm:[&:has(option[value=Transferencia]:checked)_.campo-cuenta>label]:col-span-1">
+              <Formulario accion={crearMovimientoCaja} textoBoton="Registrar movimiento">
+                <Campo etiqueta="Tipo" ancho>
+                  <select name="tipo" className={`${claseInput} sm:min-w-36`}>
+                    {TIPOS_MOVIMIENTO_CAJA.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+                <div className="campo-cuenta contents">
+                  <Campo etiqueta="Cuenta">
+                    <select name="cuenta" defaultValue={filtro.cuenta ?? CAJA} className={`${claseInput} sm:min-w-36`}>
+                      {CUENTAS.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </Campo>
+                </div>
+                <div className="campo-hacia">
+                  <Campo etiqueta="Hacia (recibe)">
+                    <select name="cuentaDestino" defaultValue="" className={`${claseInput} sm:min-w-36`}>
+                      <option value="">Elige…</option>
+                      {CUENTAS.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </Campo>
+                </div>
+                <Campo etiqueta="Monto" ancho>
+                  <span className="relative block sm:w-36">
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm font-medium text-tenue"
+                    >
+                      Q
+                    </span>
+                    <input
+                      name="monto"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      autoComplete="off"
+                      placeholder="0.00"
+                      aria-label="Monto en quetzales"
+                      className={`${claseInput} w-full pl-7 tabular-nums`}
+                    />
                   </span>
+                </Campo>
+                <Campo etiqueta="Fecha" ancho>
+                  <input name="fecha" type="date" required defaultValue={hoyISO()} className={claseInput} />
+                </Campo>
+                <Campo etiqueta="Descripción" ancho>
                   <input
-                    name="monto"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0.01"
+                    name="descripcion"
                     required
-                    placeholder="0.00"
-                    aria-label="Monto en quetzales"
-                    className={`${claseInput} w-full pl-7 tabular-nums`}
+                    autoComplete="off"
+                    placeholder="Ej. Saldo inicial"
+                    className={`${claseInput} sm:w-64 xl:w-80`}
                   />
-                </span>
-              </Campo>
-              <Campo etiqueta="Fecha" ancho>
-                <input name="fecha" type="date" required defaultValue={hoyISO()} className={claseInput} />
-              </Campo>
-              <Campo etiqueta="Descripción" ancho>
-                <input
-                  name="descripcion"
-                  required
-                  placeholder="Ej. Saldo inicial"
-                  className={`${claseInput} sm:w-64 xl:w-80`}
-                />
-              </Campo>
-            </Formulario>
+                </Campo>
+              </Formulario>
+            </div>
           </PanelAlta>
           <Nota tono="ayuda">
             Para arrancar una cuenta (por ejemplo Caja chica con Q40,000) registra un <b>Ingreso</b> con la
