@@ -1,9 +1,16 @@
 export const ESTATUS_VIAJE = [
+  "Por asignar",
   "Programado",
   "En ruta",
   "Entregado",
   "Cancelado",
 ] as const;
+
+// Estatus que la oficina puede poner a mano: "Por asignar" solo lo pone la
+// pantalla de pedidos, y se sale de él asignando camión y piloto.
+export const ESTATUS_ASIGNADO = ESTATUS_VIAJE.filter(
+  (e): e is Exclude<(typeof ESTATUS_VIAJE)[number], "Por asignar"> => e !== "Por asignar",
+);
 
 export const CATEGORIAS_GASTO = ["Diesel", "Repuestos"] as const;
 
@@ -21,6 +28,7 @@ export const RESPONSABLES = [
 ] as const;
 
 export const ESTILO_ESTATUS: Record<(typeof ESTATUS_VIAJE)[number], string> = {
+  "Por asignar": "bg-orange-100 text-orange-800 ring-1 ring-orange-200",
   Programado: "bg-blue-100 text-blue-800 ring-1 ring-blue-200",
   "En ruta": "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
   Entregado: "bg-green-100 text-green-800 ring-1 ring-green-200",

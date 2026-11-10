@@ -68,7 +68,7 @@ export async function obtenerReporte({ anio, desde, hasta }: Periodo) {
     db
       .select({ viajes: count(), ingresos })
       .from(viajes)
-      .where(and(enRangoViaje, inArray(viajes.estatus, ["Programado", "En ruta"]))),
+      .where(and(enRangoViaje, inArray(viajes.estatus, ["Por asignar", "Programado", "En ruta"]))),
     db
       .select({ etiqueta: camiones.placa, viajes: count(), valor: ingresos })
       .from(viajes)
@@ -167,8 +167,8 @@ export async function obtenerDetalle({ anio, desde, hasta }: Periodo) {
           pagoChofer: viajes.pagoChofer,
         })
         .from(viajes)
-        .innerJoin(camiones, eq(viajes.camionId, camiones.id))
-        .innerJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
+        .leftJoin(camiones, eq(viajes.camionId, camiones.id))
+        .leftJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
         .where(and(eq(viajes.anio, anio), between(viajes.semana, desde, hasta)))
         .orderBy(asc(viajes.fecha), asc(viajes.id)),
       db

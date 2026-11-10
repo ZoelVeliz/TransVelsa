@@ -11,6 +11,7 @@ import {
   boolean,
   date,
   integer,
+  numeric,
   pgEnum,
   pgTable,
   serial,
@@ -19,6 +20,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const estatusViaje = pgEnum("estatus_viaje", [
+  "Por asignar",
   "Programado",
   "En ruta",
   "Entregado",
@@ -39,16 +41,32 @@ export const camiones = pgTable("camiones", {
   placa: text("placa").notNull(),
 });
 
+const dinero = (name: string) => numeric(name, { precision: 12, scale: 2, mode: "number" });
+
+// Solo para la pantalla de pedidos: el viaje copia el flete y el pago del chofer.
+export const tarifas = pgTable("tarifas", {
+  id: serial("id").primaryKey(),
+  destino: text("destino").notNull(),
+  producto: text("producto").notNull(),
+  monto: dinero("monto").notNull(),
+  pagoChofer: dinero("pago_chofer").notNull(),
+});
+
 export const viajes = pgTable("viajes", {
   id: serial("id").primaryKey(),
   pedido: text("pedido").notNull(),
   fecha: date("fecha").notNull(),
-  camionId: integer("camion_id").notNull(),
-  pilotoId: integer("piloto_id").notNull(),
+  anio: integer("anio").notNull(),
+  semana: integer("semana").notNull(),
+  // Vacíos mientras el viaje está "Por asignar".
+  camionId: integer("camion_id"),
+  pilotoId: integer("piloto_id"),
   planta: text("planta").notNull(),
   destino: text("destino").notNull(),
   producto: text("producto").notNull(),
   estatus: estatusViaje("estatus").notNull(),
+  tarifaFlete: dinero("tarifa_flete").notNull(),
+  pagoChofer: dinero("pago_chofer").notNull(),
   enRutaEn: timestamp("en_ruta_en"),
   entregadoEn: timestamp("entregado_en"),
 });

@@ -2,6 +2,7 @@ import type { EstatusViaje } from "@/lib/db";
 import { Icono, type NombreIcono } from "./iconos";
 
 const ESTILO: Record<EstatusViaje, { clase: string; icono: NombreIcono }> = {
+  "Por asignar": { clase: "bg-alerta-claro text-alerta ring-alerta/30", icono: "info" },
   Programado: { clase: "bg-marca-50 text-marca-oscuro ring-marca/25", icono: "calendario" },
   "En ruta": { clase: "bg-alerta-claro text-alerta ring-alerta/30", icono: "camion" },
   Entregado: { clase: "bg-exito-claro text-exito-oscuro ring-exito/30", icono: "checkCirculo" },

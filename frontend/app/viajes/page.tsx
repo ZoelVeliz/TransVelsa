@@ -3,17 +3,19 @@ import Link from "next/link";
 import { io } from "next/cache";
 import { Suspense, type ReactNode } from "react";
 import {
+  asignarViaje,
   borrarViaje,
   cambiarEstatusViaje,
   crearViaje,
 } from "@/lib/acciones";
-import { ESTATUS_VIAJE } from "@/lib/constantes";
+import { ESTATUS_ASIGNADO, ESTATUS_VIAJE } from "@/lib/constantes";
 import { camiones, db, pilotos, tarifas, viajes } from "@/lib/db";
 import { paginacion, param, paramFecha, paramNumero, type Params } from "@/lib/filtros";
 import { anioSemana, formatoFecha, formatoQ, horaFecha, hoyISO, rangoSemana, cantidad } from "@/lib/formato";
 import { BORDE_ESTATUS } from "@/components/estatus";
 import { Paginacion } from "@/components/paginacion";
 import {
+  AsignarViaje,
   BotonBorrar,
   Formulario,
   SelectEstatus,
@@ -109,7 +111,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   if (filtro.estatus) condiciones.push(eq(viajes.estatus, filtro.estatus));
 
   const donde = and(...condiciones);
-  const [listaPilotos, listaCamiones, listaTarifas, semanas, porEstatus] =
+  const [listaPilotos, listaCamiones, listaTarifas, semanas, porEstatus, [porAsignar]] =
     await Promise.all([
       db.select().from(pilotos).where(eq(pilotos.activo, true)).orderBy(asc(pilotos.nombre)),
       db.select().from(camiones).where(eq(camiones.activo, true)).orderBy(asc(camiones.placa)),
@@ -124,6 +126,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
         .from(viajes)
         .where(donde)
         .groupBy(viajes.estatus),
+      // Pedidos sin camión ni piloto, de cualquier fecha: el aviso no depende de los filtros.
+      db.select({ n: count() }).from(viajes).where(eq(viajes.estatus, "Por asignar")),
     ]);
 
   const contar = (e: string) => porEstatus.find((x) => x.estatus === e)?.n ?? 0;
@@ -155,8 +159,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
       entregadoEn: viajes.entregadoEn,
     })
     .from(viajes)
-    .innerJoin(camiones, eq(viajes.camionId, camiones.id))
-    .innerJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
+    .leftJoin(camiones, eq(viajes.camionId, camiones.id))
+    .leftJoin(pilotos, eq(viajes.pilotoId, pilotos.id))
     .where(donde)
     .orderBy(desc(viajes.fecha), desc(viajes.id))
     .limit(pag.porPagina)
@@ -178,9 +182,20 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     listaTarifas.length === 0 || listaPilotos.length === 0 || listaCamiones.length === 0;
 
   const distribucion = ESTATUS_VIAJE.map((e) => ({ estatus: e, n: contar(e) }));
+  // Un viaje por asignar se asigna; los demás cambian de estatus.
+  const controlEstatus = (f: FilaViaje) =>
+    f.estatus === "Por asignar" ? (
+      <AsignarViaje camiones={listaCamiones} pilotos={listaPilotos} accion={asignarViaje.bind(null, f.id)} />
+    ) : (
+      <>
+        <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
+        <MarcaApp viaje={f} />
+      </>
+    );
 
   return (
     <>
+      {porAsignar.n > 0 && filtro.estatus !== "Por asignar" && <AvisoPorAsignar n={porAsignar.n} />}
       <Resumen
         datos={[
           { etiqueta: "Viajes", valor: String(activos), icono: "camion", nota: "sin cancelados" },
@@ -259,7 +274,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
               </Campo>
               <Campo etiqueta="Estatus">
                 <select name="estatus" defaultValue="Programado" className={claseInput}>
-                  {ESTATUS_VIAJE.map((e) => (
+                  {ESTATUS_ASIGNADO.map((e) => (
                     <option key={e}>{e}</option>
                   ))}
                 </select>
@@ -378,7 +393,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
             {/* Tarjetas hasta lg: con el sidebar, la tabla no cabe antes. */}
             <ul className="space-y-2.5 p-3 sm:p-4 lg:hidden">
               {filas.map((f) => (
-                <TarjetaViaje key={f.id} viaje={f} />
+                <TarjetaViaje key={f.id} viaje={f} estatus={controlEstatus(f)} />
               ))}
               <li>
                 <TotalMovil etiqueta="Total fletes" valor={formatoQ(total)} />
@@ -424,23 +439,24 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                           <span className="block text-xs leading-snug text-tenue">{f.producto}</span>
                         </td>
                         <td>
-                          <span className="flex min-w-36 items-center gap-2">
-                            <Avatar nombre={f.piloto} />
-                            <span className="leading-snug">{f.piloto}</span>
-                          </span>
+                          {f.piloto ? (
+                            <span className="flex min-w-36 items-center gap-2">
+                              <Avatar nombre={f.piloto} />
+                              <span className="leading-snug">{f.piloto}</span>
+                            </span>
+                          ) : (
+                            <SinAsignar />
+                          )}
                         </td>
                         <td>
-                          <Placa placa={f.placa} />
+                          {f.placa ? <Placa placa={f.placa} /> : <SinAsignar />}
                           {/* Entre lg y 2xl la planta va bajo la placa para que la tabla quepa sin scroll. */}
                           <span className="mt-1 block text-xs text-tenue 2xl:hidden">
                             Planta <span className="font-mono font-semibold">{f.planta}</span>
                           </span>
                         </td>
                         <td className="font-mono text-xs font-semibold text-tenue max-2xl:hidden">{f.planta}</td>
-                        <td>
-                          <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
-                          <MarcaApp viaje={f} />
-                        </td>
+                        <td>{controlEstatus(f)}</td>
                         <td className="text-right whitespace-nowrap">
                           {cancelado ? (
                             <span className="tabular-nums text-tenue line-through" title="No suma al total">
@@ -483,6 +499,38 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
   );
 }
 
+// Pedidos hechos desde la pantalla de pedidos que esperan camión y piloto.
+function AvisoPorAsignar({ n }: { n: number }) {
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-interno bg-orange-50 p-3 ring-1 ring-orange-300/60 ring-inset sm:px-4"
+    >
+      <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-orange-600 ring-1 ring-orange-300/60">
+          <Icono nombre="alerta" className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-orange-900">
+            {cantidad(n, "viaje por asignar", "viajes por asignar")}
+          </p>
+          <p className="mt-0.5 text-xs text-orange-800">
+            Pedidos nuevos sin camión ni piloto. Asígnalos para que le lleguen al chofer.
+          </p>
+        </div>
+      </div>
+      <Link href="/viajes?estatus=Por+asignar" className={`${claseBotonSecundario} max-sm:w-full`}>
+        <Icono nombre="lista" />
+        Ver y asignar
+      </Link>
+    </div>
+  );
+}
+
+function SinAsignar() {
+  return <span className="text-sm text-suave italic">Sin asignar</span>;
+}
+
 function EtiquetaTotal({ activos }: { activos: number }) {
   return (
     <span className="flex items-baseline justify-end gap-2">
@@ -500,8 +548,8 @@ type FilaViaje = {
   anio: number;
   semana: number;
   fecha: string;
-  placa: string;
-  piloto: string;
+  placa: string | null;
+  piloto: string | null;
   planta: string;
   destino: string;
   producto: string;
@@ -566,6 +614,7 @@ function BandaSemana({ semana, anio, lunes, domingo }: { semana: number; anio: n
 }
 
 const SEGMENTO: Record<Estatus, string> = {
+  "Por asignar": "bg-orange-500",
   Programado: "bg-marca",
   "En ruta": "bg-amber-500",
   Entregado: "bg-exito",
@@ -615,7 +664,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
 }
 
 // Tarjeta de un viaje en celular y tableta.
-function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
+function TarjetaViaje({ viaje: f, estatus }: { viaje: FilaViaje; estatus: ReactNode }) {
   const cancelado = f.estatus === "Cancelado";
   return (
     <li className={`${claseTarjetaMovil} border-l-4 ${BORDE_ESTATUS[f.estatus]} ${cancelado ? "bg-slate-50!" : ""}`}>
@@ -627,10 +676,7 @@ function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
             {f.pedido}
           </p>
         </div>
-        <div className="flex shrink-0 flex-col items-end">
-          <SelectEstatus estatus={f.estatus} accion={cambiarEstatusViaje.bind(null, f.id)} />
-          <MarcaApp viaje={f} />
-        </div>
+        <div className="flex shrink-0 flex-col items-end">{estatus}</div>
       </div>
 
       <div className="mt-2.5 flex items-start gap-2">
@@ -653,14 +699,16 @@ function TarjetaViaje({ viaje: f }: { viaje: FilaViaje }) {
           </span>
         </Dato>
         <Dato etiqueta="Piloto">
-          <span className="flex items-center gap-2">
-            <Avatar nombre={f.piloto} />
-            <span className="min-w-0 leading-tight wrap-break-word">{f.piloto}</span>
-          </span>
+          {f.piloto ? (
+            <span className="flex items-center gap-2">
+              <Avatar nombre={f.piloto} />
+              <span className="min-w-0 leading-tight wrap-break-word">{f.piloto}</span>
+            </span>
+          ) : (
+            <SinAsignar />
+          )}
         </Dato>
-        <Dato etiqueta="Placa">
-          <Placa placa={f.placa} />
-        </Dato>
+        <Dato etiqueta="Placa">{f.placa ? <Placa placa={f.placa} /> : <SinAsignar />}</Dato>
         <Dato etiqueta="Planta">
           <span className="font-mono text-[13px] font-semibold">{f.planta}</span>
         </Dato>

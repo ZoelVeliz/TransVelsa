@@ -35,3 +35,14 @@ export function etiquetaDia(iso: string, hoy: string) {
   if (iso === sumarDias(hoy, -1)) return "Ayer";
   return null;
 }
+
+// Año y semana ISO (lunes a domingo), igual que la oficina (frontend/lib/formato.ts).
+export function anioSemana(iso: string) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const fecha = new Date(Date.UTC(a, m - 1, d));
+  const dia = fecha.getUTCDay() || 7;
+  fecha.setUTCDate(fecha.getUTCDate() + 4 - dia);
+  const inicio = new Date(Date.UTC(fecha.getUTCFullYear(), 0, 1));
+  const semana = Math.ceil(((+fecha - +inicio) / 86400000 + 1) / 7);
+  return { anio: fecha.getUTCFullYear(), semana };
+}

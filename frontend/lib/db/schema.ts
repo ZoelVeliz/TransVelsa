@@ -14,7 +14,10 @@ import {
 const dinero = (name: string) =>
   numeric(name, { precision: 12, scale: 2, mode: "number" });
 
+// "Por asignar": pedido hecho desde la pantalla de pedidos (app de choferes,
+// /p/<token>) que aún no tiene camión ni piloto; la oficina se los asigna.
 export const estatusViaje = pgEnum("estatus_viaje", [
+  "Por asignar",
   "Programado",
   "En ruta",
   "Entregado",
@@ -72,12 +75,9 @@ export const viajes = pgTable("viajes", {
   fecha: date("fecha").notNull(),
   anio: integer("anio").notNull(),
   semana: integer("semana").notNull(),
-  camionId: integer("camion_id")
-    .notNull()
-    .references(() => camiones.id),
-  pilotoId: integer("piloto_id")
-    .notNull()
-    .references(() => pilotos.id),
+  // Ambos quedan vacíos solo mientras el viaje está "Por asignar".
+  camionId: integer("camion_id").references(() => camiones.id),
+  pilotoId: integer("piloto_id").references(() => pilotos.id),
   planta: text("planta").notNull().default("SM"),
   destino: text("destino").notNull(),
   producto: text("producto").notNull(),

@@ -25,6 +25,7 @@ const COLOR_RESPONSABLE: Record<(typeof RESPONSABLES)[number]["nombre"], string>
 const OSCUROS = new Set(["FF1E3A8A"]);
 
 const ESTATUS_COLOR: Record<string, string> = {
+  "Por asignar": "FFFFEDD5",
   Programado: "FFDBEAFE",
   "En ruta": "FFFEF3C7",
   Entregado: "FFBBF7D0",
@@ -327,8 +328,8 @@ export async function GET(request: NextRequest) {
       v.anio,
       v.semana,
       aFecha(v.fecha),
-      v.placa,
-      v.piloto,
+      v.placa ?? "",
+      v.piloto ?? "",
       v.planta,
       `${v.destino} / ${v.producto}`,
       v.estatus,

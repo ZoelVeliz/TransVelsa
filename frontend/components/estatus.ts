@@ -4,6 +4,7 @@ type Estatus = (typeof ESTATUS_VIAJE)[number];
 
 // Estilos visuales del estatus de un viaje (el ring lo pone quien lo usa).
 export const ESTILO_ESTATUS: Record<Estatus, string> = {
+  "Por asignar": "bg-orange-50 text-orange-800 ring-orange-300/60",
   Programado: "bg-marca-50 text-marca-oscuro ring-marca/20",
   "En ruta": "bg-alerta-claro text-amber-800 ring-amber-300/60",
   Entregado: "bg-exito-claro text-green-800 ring-green-300/60",
@@ -11,6 +12,7 @@ export const ESTILO_ESTATUS: Record<Estatus, string> = {
 };
 
 export const PUNTO_ESTATUS: Record<Estatus, string> = {
+  "Por asignar": "bg-orange-500",
   Programado: "bg-marca",
   "En ruta": "bg-amber-500 animate-pulse",
   Entregado: "bg-exito",
@@ -19,6 +21,7 @@ export const PUNTO_ESTATUS: Record<Estatus, string> = {
 
 // Borde izquierdo de las tarjetas móviles (usar junto con border-l-4).
 export const BORDE_ESTATUS: Record<Estatus, string> = {
+  "Por asignar": "border-l-orange-500",
   Programado: "border-l-marca",
   "En ruta": "border-l-amber-500",
   Entregado: "border-l-exito",

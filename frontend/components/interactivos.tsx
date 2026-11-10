@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Estado } from "@/lib/acciones";
-import { ESTATUS_VIAJE } from "@/lib/constantes";
+import { ESTATUS_ASIGNADO, ESTATUS_VIAJE } from "@/lib/constantes";
 import { ESTILO_ESTATUS, PUNTO_ESTATUS } from "./estatus";
 import { Icono, type NombreIcono } from "./iconos";
 import {
@@ -19,6 +19,7 @@ import {
   claseBotonPeligro,
   claseBotonPrimario,
   claseBotonSecundario,
+  claseInput,
   Insignia,
 } from "./ui";
 
@@ -229,13 +230,69 @@ export function SelectEstatus({
         }}
         className={`h-7 cursor-pointer appearance-none rounded-full bg-none py-0 pr-6 pl-6 text-xs font-semibold shadow-control ring-1 ring-inset transition hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-wait disabled:opacity-70 max-md:h-10 max-md:pr-7 max-md:pl-7 max-md:text-base ${ESTILO_ESTATUS[visible]}`}
       >
-        {ESTATUS_VIAJE.map((e) => (
+        {ESTATUS_ASIGNADO.map((e) => (
           <option key={e}>{e}</option>
         ))}
       </select>
       <Icono nombre="chevron" className="pointer-events-none absolute right-2 size-3 opacity-60" grosor={2.5} />
       {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
     </span>
+  );
+}
+
+// Viaje "Por asignar": la oficina elige camión y piloto y queda Programado.
+export function AsignarViaje({
+  camiones,
+  pilotos,
+  accion,
+}: {
+  camiones: { id: number; placa: string }[];
+  pilotos: { id: number; nombre: string }[];
+  accion: (estado: Estado, form: FormData) => Promise<Estado>;
+}) {
+  const [estado, enviar, pendiente] = useActionState(async (previo: Estado, form: FormData) => {
+    try {
+      return await accion(previo, form);
+    } catch {
+      return { error: ERROR_RED };
+    }
+  }, {});
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- muestra el error recién llegado
+    if (estado.error) setError(estado.error);
+  }, [estado]);
+  const claseSelect = `${claseInput} h-9! text-sm! sm:w-full`;
+  return (
+    <form
+      aria-busy={pendiente}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (pendiente) return;
+        setError(null);
+        const datos = new FormData(e.currentTarget);
+        startTransition(() => enviar(datos));
+      }}
+      className="flex min-w-44 flex-col gap-1.5"
+    >
+      <select name="camionId" required defaultValue="" aria-label="Camión" disabled={pendiente} className={claseSelect}>
+        <option value="" disabled>Camión…</option>
+        {camiones.map((c) => (
+          <option key={c.id} value={c.id}>{c.placa}</option>
+        ))}
+      </select>
+      <select name="pilotoId" required defaultValue="" aria-label="Piloto" disabled={pendiente} className={claseSelect}>
+        <option value="" disabled>Piloto…</option>
+        {pilotos.map((p) => (
+          <option key={p.id} value={p.id}>{p.nombre}</option>
+        ))}
+      </select>
+      <button disabled={pendiente} className={`${claseBotonPrimario} h-9! disabled:cursor-wait`}>
+        {pendiente ? <Giro className="size-4 border-current/30 border-t-current" /> : <Icono nombre="check" className="size-4" />}
+        {pendiente ? "Asignando…" : "Asignar"}
+      </button>
+      {error && <AvisoError mensaje={error} alCerrar={() => setError(null)} />}
+    </form>
   );
 }
 
