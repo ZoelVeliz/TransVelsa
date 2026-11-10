@@ -4,26 +4,28 @@
    logo: azul rey de la cabina, rojo de las franjas, negro y plata. */
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-barlow), var(--font-geist-sans), sans-serif;
+  /* Estilo Linear: títulos en la misma sans, apretados. */
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 
-  --color-marca: #1d4ed8;
-  --color-marca-oscuro: #1e3a8a;
-  --color-marca-claro: #dbeafe;
-  --color-marca-50: #eff4ff;
-  --color-acento: #e11d2a;
-  --color-acento-oscuro: #b91c1c;
-  --color-acento-claro: #fee2e2;
-  --color-tinta: #0a0d14;
-  --color-cabina: #000000;
-  --color-cabina-2: #0b0f17;
-  --color-cabina-3: #141a26;
-  --color-plata: #c0c6d0;
-  --color-plata-claro: #e6e9ef;
+  --color-marca: #2450e6;
+  --color-marca-oscuro: #1a3bb8;
+  --color-marca-claro: #dbe4ff;
+  --color-marca-50: #eef2ff;
+  --color-acento: #e5323e;
+  --color-acento-oscuro: #b91c28;
+  --color-acento-claro: #ffe4e6;
+  --color-tinta: #0b0d12;
+  --color-cabina: #07080c;
+  --color-cabina-2: #0e1016;
+  --color-cabina-3: #171a22;
+  --color-plata: #c3c9d4;
+  --color-plata-claro: #e8ebf1;
 
-  --color-fondo: #eef1f6;
-  --color-superficie: #ffffff;
-  --color-borde: #dde2ea;
-  --color-borde-fuerte: #c3cad6;
+  /* Cristal: más opaco que en la oficina para leerse bien al sol. */
+  --color-fondo: #f1f3f8;
+  --color-superficie: rgb(255 255 255 / 0.82);
+  --color-borde: rgb(17 24 39 / 0.09);
+  --color-borde-fuerte: rgb(17 24 39 / 0.18);
   --color-tenue: #4b5363; /* secundario: 7.6:1 sobre blanco, legible al sol */
 
   --color-exito: #15803d;
@@ -40,8 +42,8 @@
   --text-eyebrow: 0.8125rem; /* 13px: etiquetas en mayúsculas */
   --text-eyebrow--line-height: 1.125rem;
 
-  --shadow-tarjeta: 0 0 0 1px rgb(10 13 20 / 0.03), 0 1px 2px rgb(10 13 20 / 0.06), 0 4px 12px -4px rgb(10 13 20 / 0.08);
-  --shadow-elevada: 0 1px 2px rgb(10 13 20 / 0.05), 0 8px 16px -6px rgb(10 13 20 / 0.14), 0 20px 40px -16px rgb(10 13 20 / 0.26);
+  --shadow-tarjeta: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(17 24 39 / 0.05), 0 12px 32px -16px rgb(17 24 39 / 0.18);
+  --shadow-elevada: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 2px 4px rgb(17 24 39 / 0.05), 0 20px 44px -18px rgb(17 24 39 / 0.3);
   --shadow-hoja: 0 -12px 40px -8px rgb(0 0 0 / 0.35);
 
   --animate-entrada: entrada 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -77,7 +79,8 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-fondo font-sans text-base text-tinta;
+    @apply font-sans text-base text-tinta;
+    background-color: var(--color-fondo);
     font-feature-settings: "cv11", "ss01";
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
@@ -86,6 +89,9 @@
   h2,
   h3 {
     text-wrap: balance;
+  }
+  .font-display {
+    letter-spacing: -0.022em;
   }
   :where(a, button, summary, [tabindex]):focus-visible {
     outline: 3px solid var(--color-marca);
@@ -99,7 +105,9 @@
     cursor: default;
   }
   dialog::backdrop {
-    background: rgb(5 8 14 / 0.6);
+    background: rgb(5 8 14 / 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -121,18 +129,43 @@
   );
 }
 
-/* Franjas diagonales del camión: solo sobre negro */
+/* Franjas del camión, refinadas: líneas finas con halo de color. Solo sobre oscuro. */
 .franjas-diagonales {
-  background: repeating-linear-gradient(
-    -60deg,
-    transparent 0 14px,
-    rgb(225 29 42 / 0.9) 14px 22px,
-    transparent 22px 30px,
-    rgb(29 78 216 / 0.9) 30px 38px,
-    transparent 38px 60px
-  );
-  -webkit-mask-image: linear-gradient(to left, #000 20%, transparent 75%);
-  mask-image: linear-gradient(to left, #000 20%, transparent 75%);
+  background:
+    radial-gradient(60% 80% at 100% 0%, rgb(36 80 230 / 0.55), transparent 70%),
+    radial-gradient(40% 60% at 100% 100%, rgb(229 50 62 / 0.35), transparent 70%),
+    repeating-linear-gradient(-60deg, transparent 0 18px, rgb(255 255 255 / 0.07) 18px 19px);
+  -webkit-mask-image: linear-gradient(to left, #000 30%, transparent);
+  mask-image: linear-gradient(to left, #000 30%, transparent);
+}
+
+/* Fondo aurora fijo detrás del cristal (solo decorativo). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(700px 480px at 90% 10%, rgb(36 80 230 / 0.14), transparent 65%),
+    radial-gradient(600px 460px at 0% 40%, rgb(124 92 255 / 0.1), transparent 65%),
+    radial-gradient(700px 520px at 100% 100%, rgb(56 189 248 / 0.1), transparent 65%),
+    linear-gradient(180deg, #f6f7fb, #eef1f7);
+}
+
+/* Superficie oscura tipo Linear con aurora. */
+.panel-oscuro {
+  background:
+    radial-gradient(90% 70% at 100% 0%, rgb(36 80 230 / 0.45), transparent 60%),
+    radial-gradient(70% 60% at 0% 100%, rgb(124 92 255 / 0.18), transparent 60%),
+    linear-gradient(180deg, #14161d, #07080c);
+}
+
+/* Cristal real (con desenfoque) para piezas flotantes. */
+.vidrio-oscuro {
+  background: rgb(9 10 15 / 0.75);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
 }
 
 @utility cifra {
@@ -143,7 +176,7 @@
 .esqueleto {
   position: relative;
   overflow: hidden;
-  background: rgb(203 213 225 / 0.55);
+  background: rgb(17 24 39 / 0.07);
 }
 .esqueleto::after {
   content: "";

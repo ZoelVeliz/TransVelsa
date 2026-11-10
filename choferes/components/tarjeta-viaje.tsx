@@ -71,11 +71,19 @@ export function TarjetaViaje({
   return (
     <article
       aria-labelledby={`destino-${viaje.id}`}
-      className={`relative overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ${
-        enRuta ? "ring-2 ring-alerta/60" : "ring-1 ring-borde"
+      className={`relative isolate overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ${
+        enRuta ? "ring-2 ring-amber-500/50" : "ring-1 ring-borde"
       }`}
     >
-      {enRuta && <div aria-hidden className="franja-marca h-1.5" />}
+      {enRuta && (
+        <>
+          <div aria-hidden className="franja-marca h-1" />
+          <div
+            aria-hidden
+            className="absolute -top-20 -right-20 -z-10 size-64 rounded-full bg-[radial-gradient(closest-side,rgb(245_158_11/0.18),transparent)]"
+          />
+        </>
+      )}
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <PillEstatus estatus={estatus} />
@@ -84,7 +92,7 @@ export function TarjetaViaje({
             {etiqueta && (
               <span
                 className={`rounded-md px-1.5 py-0.5 text-sm font-bold ${
-                  etiqueta === "Hoy" ? "bg-tinta text-white" : "bg-fondo text-tinta ring-1 ring-borde"
+                  etiqueta === "Hoy" ? "bg-tinta text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.15)]" : "bg-white/80 text-tinta ring-1 ring-borde"
                 }`}
               >
                 {etiqueta}
@@ -94,10 +102,10 @@ export function TarjetaViaje({
           </p>
         </div>
 
-        <p className="mt-3 text-sm font-semibold tracking-[0.12em] text-tenue uppercase">Destino</p>
+        <p className="mt-4 text-sm font-medium tracking-[0.1em] text-tenue uppercase">Destino</p>
         <h3
           id={`destino-${viaje.id}`}
-          className="font-display text-[1.875rem] leading-[1.1] font-bold tracking-tight break-words text-tinta"
+          className="font-display text-[1.875rem] leading-[1.1] font-semibold tracking-tight break-words text-tinta"
         >
           {viaje.destino}
         </h3>
@@ -106,14 +114,14 @@ export function TarjetaViaje({
           {viaje.producto}
         </p>
 
-        <dl className="mt-4 grid grid-cols-3 divide-x divide-borde rounded-xl bg-fondo ring-1 ring-borde">
+        <dl className="mt-4 grid grid-cols-3 divide-x divide-borde rounded-2xl bg-white/70 shadow-[inset_0_1px_0_white] ring-1 ring-borde">
           <Dato titulo="Pedido" valor={viaje.pedido} />
           <Dato titulo="Planta" valor={viaje.planta} />
           <Dato titulo="Camión" valor={viaje.placa} />
         </dl>
 
         {viaje.estatus === "Programado" && (atrasado || otroEnRuta) && (
-          <p className="mt-3 flex gap-2 rounded-xl bg-marca-50 p-3 text-base leading-snug text-marca-oscuro ring-1 ring-marca/15">
+          <p className="mt-3 flex gap-2 rounded-2xl bg-marca-50/80 p-3 text-base leading-snug text-marca-oscuro ring-1 ring-marca/15">
             <Icono nombre="info" className="mt-0.5 size-5 shrink-0" />
             {otroEnRuta
               ? "Ya tienes un viaje en ruta. Si vas a iniciar este, recuerda completar el otro."
@@ -124,7 +132,7 @@ export function TarjetaViaje({
         {error && (
           <p
             role="alert"
-            className="mt-3 flex gap-2 rounded-xl bg-peligro-claro p-3 text-base leading-snug font-medium text-peligro ring-1 ring-peligro/25"
+            className="mt-3 flex gap-2 rounded-2xl bg-peligro-claro/80 p-3 text-base leading-snug font-medium text-peligro ring-1 ring-peligro/25"
           >
             <Icono nombre="alerta" className="mt-0.5 size-5 shrink-0" />
             {error}
@@ -163,18 +171,18 @@ export function TarjetaViaje({
           onClick={(e) => {
             if (e.target === e.currentTarget) e.currentTarget.close();
           }}
-          className="m-0 mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-[1.75rem] bg-superficie p-0 text-tinta shadow-hoja open:animate-subir"
+          className="m-0 mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-white/95 p-0 text-tinta shadow-hoja ring-1 ring-white backdrop-blur-xl open:animate-subir"
         >
           <div className="mx-auto w-full max-w-xl px-5 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             <div aria-hidden className="mx-auto h-1.5 w-12 rounded-full bg-borde-fuerte" />
-            <h2 id={`confirmar-${viaje.id}`} className="mt-4 font-display text-[1.625rem] leading-tight font-bold">
+            <h2 id={`confirmar-${viaje.id}`} className="mt-4 font-display text-[1.625rem] leading-tight font-semibold">
               ¿Completar este viaje?
             </h2>
             <p className="mt-1 text-base text-tenue">Confírmalo solo cuando ya entregaste la carga.</p>
 
-            <div className="mt-4 rounded-2xl bg-fondo p-4 ring-1 ring-borde">
-              <p className="text-sm font-semibold tracking-[0.12em] text-tenue uppercase">Destino</p>
-              <p className="font-display text-[1.75rem] leading-tight font-bold break-words">{viaje.destino}</p>
+            <div className="mt-4 rounded-2xl bg-linear-to-b from-fondo to-white p-4 shadow-[inset_0_1px_0_white] ring-1 ring-borde">
+              <p className="text-sm font-medium tracking-[0.1em] text-tenue uppercase">Destino</p>
+              <p className="font-display text-[1.75rem] leading-tight font-semibold break-words">{viaje.destino}</p>
               <p className="mt-1 text-lg">
                 Pedido <span className="cifra font-bold">{viaje.pedido}</span>
                 <span className="text-tenue"> · {viaje.producto}</span>
@@ -186,7 +194,7 @@ export function TarjetaViaje({
                 type="button"
                 autoFocus
                 onClick={confirmarCompletar}
-                className="inline-flex min-h-15 items-center justify-center gap-2 rounded-control bg-exito px-5 text-xl font-bold text-white shadow-elevada active:bg-exito-oscuro"
+                className="inline-flex min-h-15 items-center justify-center gap-2 rounded-control bg-exito bg-linear-to-b from-white/20 to-transparent px-5 text-xl font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_10px_24px_-8px_rgb(15_122_61/0.7)] active:bg-exito-oscuro"
               >
                 <Icono nombre="check" className="size-6" strokeWidth={2.6} />
                 Sí, ya entregué
@@ -194,7 +202,7 @@ export function TarjetaViaje({
               <button
                 type="button"
                 onClick={() => hoja.current?.close()}
-                className="min-h-14 rounded-control bg-superficie px-5 text-lg font-semibold text-tinta ring-2 ring-borde-fuerte active:bg-fondo"
+                className="min-h-14 rounded-control bg-white px-5 text-lg font-semibold text-tinta shadow-[0_1px_2px_rgb(17_24_39/0.06)] ring-1 ring-borde-fuerte active:bg-fondo"
               >
                 Cancelar
               </button>
@@ -232,15 +240,15 @@ function BotonGrande({
 }) {
   const color =
     tono === "marca"
-      ? "bg-marca active:bg-marca-oscuro shadow-[0_6px_16px_-6px_rgb(29_78_216/0.7)]"
-      : "bg-exito active:bg-exito-oscuro shadow-[0_6px_16px_-6px_rgb(21_128_61/0.7)]";
+      ? "bg-marca active:bg-marca-oscuro shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_12px_28px_-10px_rgb(36_80_230/0.8)]"
+      : "bg-exito active:bg-exito-oscuro shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_12px_28px_-10px_rgb(15_122_61/0.75)]";
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={pendiente}
       aria-busy={pendiente}
-      className={`mt-4 inline-flex min-h-15 w-full items-center justify-center gap-2.5 rounded-control px-5 text-xl font-bold text-white transition-[transform,background-color] active:scale-[0.99] disabled:opacity-75 ${color}`}
+      className={`mt-5 inline-flex min-h-15 w-full items-center justify-center gap-2.5 rounded-control bg-linear-to-b from-white/20 to-transparent px-5 text-xl font-bold text-white transition-[transform,background-color] active:scale-[0.99] disabled:opacity-75 ${color}`}
     >
       {pendiente ? (
         <>

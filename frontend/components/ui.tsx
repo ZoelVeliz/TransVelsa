@@ -27,24 +27,23 @@ export function Encabezado({
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
       <div className="flex min-w-0 items-start gap-4">
         {icono && (
-          <span className="relative mt-0.5 hidden size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-cabina text-white shadow-elevada ring-1 ring-white/10 sm:grid">
-            <span
-              aria-hidden
-              className="absolute inset-0 bg-[radial-gradient(90%_90%_at_100%_0%,rgb(29_78_216/0.6),transparent_65%)]"
-            />
-            <Icono nombre={icono} className="relative size-6 text-white" />
-            <span aria-hidden className="franja-marca absolute inset-x-0 bottom-0 h-1" />
+          <span className="panel-oscuro relative mt-1 hidden size-13 shrink-0 place-items-center overflow-hidden rounded-[14px] text-white sm:grid">
+            <Icono nombre={icono} className="relative size-5.5 text-white" />
+            <span aria-hidden className="franja-marca absolute inset-x-2 bottom-0 h-px" />
           </span>
         )}
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-eyebrow font-semibold uppercase tracking-[0.18em] text-acento-oscuro">
-            <span aria-hidden className="franja-marca h-1 w-5 rounded-full sm:hidden" />
+          <p className="vidrio inline-flex items-center gap-2 rounded-full py-1 pr-3 pl-2 text-eyebrow font-medium tracking-[0.06em] text-tenue shadow-control ring-1 ring-borde">
+            <span aria-hidden className="relative grid size-2 place-items-center">
+              <span className="absolute size-2 rounded-full bg-marca/30 motion-safe:animate-ping" />
+              <span className="size-1.5 rounded-full bg-marca" />
+            </span>
             {eyebrow}
           </p>
-          <h1 className="mt-1 font-display text-titulo font-bold tracking-tight text-tinta sm:text-titulo-lg">
+          <h1 className="mt-2.5 font-display text-titulo font-semibold tracking-tight text-tinta sm:text-titulo-lg">
             {titulo}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-tenue sm:text-[15px]">{descripcion}</p>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-tenue sm:text-[15px]">{descripcion}</p>
           {meta && <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div>}
         </div>
       </div>
@@ -54,9 +53,9 @@ export function Encabezado({
 }
 
 const ICONO_TONO = {
-  marca: "bg-linear-to-b from-marca-50 to-marca-claro/70 text-marca ring-marca/15",
-  acento: "bg-linear-to-b from-red-50 to-acento-claro text-acento-oscuro ring-acento/15",
-  exito: "bg-linear-to-b from-green-50 to-exito-claro text-exito ring-exito/15",
+  marca: "bg-linear-to-b from-white to-marca-50 text-marca ring-marca/15",
+  acento: "bg-linear-to-b from-white to-acento-claro/70 text-acento-oscuro ring-acento/15",
+  exito: "bg-linear-to-b from-white to-exito-claro/70 text-exito ring-exito/15",
 };
 
 export function Tarjeta({
@@ -86,21 +85,21 @@ export function Tarjeta({
   id?: string;
 }) {
   return (
-    <section id={id} className="overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde">
+    <section id={id} className="overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde animate-entrada">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-borde px-4 py-3.5 sm:px-5 sm:py-4">
         <div className="flex min-w-0 flex-1 items-center gap-x-3">
           {icono ? (
             <span
-              className={`grid size-9 shrink-0 place-items-center rounded-[10px] shadow-[inset_0_1px_0_rgb(255_255_255/0.7)] ring-1 ${ICONO_TONO[tono]}`}
+              className={`grid size-8 shrink-0 place-items-center rounded-[9px] shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(17_24_39/0.06)] ring-1 ${ICONO_TONO[tono]}`}
             >
-              <Icono nombre={icono} className="size-4.5" />
+              <Icono nombre={icono} className="size-4" />
             </span>
           ) : (
             <span aria-hidden className={`h-5 w-1 rounded-full ${tono === "acento" ? "bg-acento" : "bg-marca"}`} />
           )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <h2 className="font-display text-lg leading-6 font-semibold tracking-tight text-tinta">{titulo}</h2>
+              <h2 className="font-display text-[15px] leading-6 font-semibold tracking-tight text-tinta sm:text-base">{titulo}</h2>
               {extra}
             </div>
             {descripcion && <p className="text-xs leading-5 text-tenue">{descripcion}</p>}
@@ -109,17 +108,17 @@ export function Tarjeta({
         {acciones}
       </header>
       <div className={flush ? "" : "p-4 sm:p-5"}>{children}</div>
-      {pie && <footer className="border-t border-borde bg-fondo/70 px-4 py-3 text-sm text-tenue sm:px-5">{pie}</footer>}
+      {pie && <footer className="border-t border-borde bg-white/40 px-4 py-3 text-sm text-tenue sm:px-5">{pie}</footer>}
     </section>
   );
 }
 
 const TONO_INSIGNIA = {
-  neutro: "bg-slate-100 text-slate-700 ring-slate-200",
-  marca: "bg-marca-50 text-marca-oscuro ring-marca/20",
-  exito: "bg-exito-claro text-green-800 ring-green-300/60",
-  peligro: "bg-peligro-claro text-red-800 ring-red-300/60",
-  alerta: "bg-alerta-claro text-amber-900 ring-amber-300/70",
+  neutro: "bg-white/70 text-slate-700 ring-slate-900/10",
+  marca: "bg-marca-50/80 text-marca-oscuro ring-marca/20",
+  exito: "bg-exito-claro/70 text-green-800 ring-green-600/20",
+  peligro: "bg-peligro-claro/70 text-red-800 ring-red-600/20",
+  alerta: "bg-alerta-claro/70 text-amber-900 ring-amber-600/25",
   oscuro: "bg-tinta text-white ring-white/10",
 };
 const PUNTO_INSIGNIA = {
@@ -193,17 +192,17 @@ export function Campo({
 
 // text-base en celular evita que iOS haga zoom al enfocar.
 export const claseInput =
-  "h-11 min-w-0 rounded-control border border-borde-fuerte bg-white px-3 text-base text-tinta shadow-control transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-suave hover:border-slate-400 focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15 disabled:cursor-not-allowed disabled:bg-fondo disabled:text-suave sm:h-9 sm:text-sm";
+  "h-11 min-w-0 rounded-control border border-borde-fuerte bg-white/85 px-3 text-base text-tinta shadow-[inset_0_1px_2px_rgb(17_24_39/0.04)] transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-suave hover:border-slate-900/25 hover:bg-white focus:border-marca focus:bg-white focus:outline-none focus:ring-4 focus:ring-marca/12 disabled:cursor-not-allowed disabled:bg-fondo disabled:text-suave sm:h-9 sm:text-sm";
 
 // inline-flex: sirven igual en <button> y en <a>.
 const base =
   "inline-flex h-11 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control px-4 text-sm font-semibold transition-[background-color,box-shadow,color,transform] duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 sm:h-9 sm:px-3.5";
 
-export const claseBotonPrimario = `${base} bg-marca bg-linear-to-b from-white/12 to-transparent text-white shadow-boton hover:bg-marca-oscuro focus-visible:ring-marca disabled:bg-none disabled:bg-fondo-2 disabled:text-tenue disabled:opacity-100 disabled:shadow-none disabled:ring-1 disabled:ring-inset disabled:ring-borde aria-disabled:bg-none aria-disabled:bg-fondo-2 aria-disabled:text-tenue aria-disabled:opacity-100 aria-disabled:shadow-none aria-disabled:ring-1 aria-disabled:ring-inset aria-disabled:ring-borde`;
-export const claseBotonSecundario = `${base} bg-white text-tinta shadow-control ring-1 ring-inset ring-borde-fuerte hover:bg-marca-50 hover:text-marca-oscuro hover:ring-marca/35 focus-visible:ring-2 focus-visible:ring-marca`;
-export const claseBotonFantasma = `${base} text-tenue hover:bg-fondo-2 hover:text-tinta focus-visible:ring-marca`;
+export const claseBotonPrimario = `${base} bg-marca bg-linear-to-b from-white/18 to-transparent text-white shadow-boton hover:bg-marca-oscuro hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_8px_20px_-6px_rgb(36_80_230/0.7)] focus-visible:ring-marca disabled:bg-none disabled:bg-fondo-2 disabled:text-tenue disabled:opacity-100 disabled:shadow-none disabled:ring-1 disabled:ring-inset disabled:ring-borde aria-disabled:bg-none aria-disabled:bg-fondo-2 aria-disabled:text-tenue aria-disabled:opacity-100 aria-disabled:shadow-none aria-disabled:ring-1 aria-disabled:ring-inset aria-disabled:ring-borde`;
+export const claseBotonSecundario = `${base} bg-white/80 text-tinta shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(17_24_39/0.06)] ring-1 ring-inset ring-borde-fuerte hover:bg-white hover:text-marca-oscuro hover:ring-marca/30 focus-visible:ring-2 focus-visible:ring-marca`;
+export const claseBotonFantasma = `${base} text-tenue hover:bg-white/70 hover:text-tinta focus-visible:ring-marca`;
 /** Acción destructiva con texto (BotonBorrar es solo ícono). */
-export const claseBotonPeligro = `${base} bg-white text-peligro shadow-control ring-1 ring-inset ring-red-200 hover:bg-peligro-claro focus-visible:ring-peligro`;
+export const claseBotonPeligro = `${base} bg-white/80 text-peligro shadow-control ring-1 ring-inset ring-red-200 hover:bg-peligro-claro focus-visible:ring-peligro`;
 export const claseBotonIcono =
   "grid size-8 place-items-center rounded-lg text-tenue transition-colors hover:bg-acento-claro hover:text-acento-oscuro focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca focus-visible:ring-offset-2 disabled:opacity-40 max-lg:size-10";
 
@@ -252,7 +251,7 @@ export function Filtros({
 // Filtros a la izquierda; a la derecha un <div className="flex flex-wrap items-center gap-2 max-sm:w-full">.
 export function BarraHerramientas({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 rounded-tarjeta bg-superficie p-3.5 shadow-tarjeta ring-1 ring-borde sm:p-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 rounded-tarjeta bg-superficie p-3 shadow-tarjeta ring-1 ring-borde sm:p-3.5">
       {children}
     </div>
   );
@@ -269,11 +268,11 @@ export function PanelAlta({
   descripcion?: string;
 }) {
   return (
-    <div className="rounded-interno bg-linear-to-b from-fondo to-fondo/40 p-3 ring-1 ring-borde ring-inset sm:p-4">
+    <div className="rounded-interno bg-linear-to-b from-white/70 to-white/30 p-3 ring-1 ring-borde ring-inset sm:p-4">
       {titulo && (
         <div className="mb-3.5">
           <h3 className="flex items-center gap-2 font-display text-[15px] font-semibold tracking-tight text-tinta">
-            <span className="grid size-5 place-items-center rounded-md bg-marca text-white">
+            <span className="grid size-5 place-items-center rounded-md bg-marca text-white shadow-boton">
               <Icono nombre="mas" className="size-3.5" grosor={2.25} />
             </span>
             {titulo}
@@ -304,7 +303,7 @@ export function Nota({
   const alerta = tono === "alerta";
   return (
     <div
-      className={`flex gap-2.5 rounded-control border-l-[3px] px-3 py-2.5 text-sm leading-relaxed ring-1 ring-inset ${alerta ? "border-l-amber-500 bg-alerta-claro/80 text-amber-900 ring-amber-300/50" : "border-l-marca bg-marca-50 text-marca-oscuro ring-marca/12"}`}
+      className={`flex gap-2.5 rounded-control border-l-[3px] px-3 py-2.5 text-sm leading-relaxed ring-1 ring-inset ${alerta ? "border-l-amber-500 bg-alerta-claro/60 text-amber-900 ring-amber-500/20" : "border-l-marca bg-marca-50/70 text-marca-oscuro ring-marca/12"}`}
     >
       <Icono nombre={alerta ? "alerta" : "info"} className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0">{children}</div>
@@ -316,7 +315,7 @@ export function Nota({
 export function Placa({ placa, grande }: { placa: string; grande?: boolean }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md border border-borde-fuerte border-t-[3px] border-t-marca bg-white font-mono font-semibold tracking-wider whitespace-nowrap text-tinta shadow-control ${grande ? "px-2.5 py-1 text-sm" : "px-1.5 py-0.5 text-xs"}`}
+      className={`inline-flex items-center rounded-md border border-borde-fuerte border-t-[3px] border-t-marca bg-white/90 font-mono font-semibold tracking-wider whitespace-nowrap text-tinta shadow-control ${grande ? "px-2.5 py-1 text-sm" : "px-1.5 py-0.5 text-xs"}`}
     >
       {placa}
     </span>
@@ -338,8 +337,8 @@ export function Avatar({ nombre, oscuro }: { nombre: string; oscuro?: boolean })
       aria-hidden
       className={
         oscuro
-          ? "grid size-10 shrink-0 place-items-center rounded-full bg-marca bg-linear-to-b from-white/15 to-transparent font-display text-base font-bold text-white ring-2 ring-white/20"
-          : "grid size-7 shrink-0 place-items-center rounded-full bg-linear-to-b from-marca-50 to-marca-claro text-[11px] font-bold text-marca-oscuro ring-1 ring-marca/15"
+          ? "grid size-10 shrink-0 place-items-center rounded-full bg-linear-to-br from-marca to-violet-600 font-display text-base font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.3)] ring-2 ring-white/15"
+          : "grid size-7 shrink-0 place-items-center rounded-full bg-linear-to-br from-white to-marca-claro text-[11px] font-semibold text-marca-oscuro shadow-[inset_0_1px_0_white] ring-1 ring-marca/15"
       }
     >
       {iniciales(nombre)}
@@ -392,12 +391,12 @@ export const claseContenedorTabla = "relative overflow-x-auto scrollbar-thin";
 export const claseTabla =
   "w-full text-sm [&_td]:px-3 [&_td]:py-3 [&_td]:align-middle [&_th]:px-3 [&_th]:py-2.5 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:last-child]:pr-4 sm:[&_td:first-child]:pl-5 sm:[&_th:first-child]:pl-5 sm:[&_td:last-child]:pr-5 sm:[&_th:last-child]:pr-5";
 export const claseThead =
-  "bg-fondo/80 text-left text-eyebrow font-semibold whitespace-nowrap uppercase tracking-[0.08em] text-tenue [&_th]:border-b [&_th]:border-borde";
+  "bg-white/45 text-left text-eyebrow font-medium whitespace-nowrap uppercase tracking-[0.08em] text-suave [&_th]:border-b [&_th]:border-borde";
 // `group` permite que BotonBorrar se aclare con el hover de la fila.
 export const claseFila =
-  "group border-b border-borde/70 transition-colors duration-100 last:border-0 hover:bg-marca-50/60";
+  "group border-b border-borde/70 transition-colors duration-100 last:border-0 hover:bg-white/75";
 export const claseTotal =
-  "border-t-2 border-tinta/85 bg-fondo font-semibold text-tinta [&_td]:py-3.5 [&_td]:tabular-nums";
+  "border-t border-borde-fuerte bg-white/55 font-semibold text-tinta [&_td]:py-3.5 [&_td]:tabular-nums";
 
 /** Tarjeta de registro en celular (reemplaza la fila de tabla). */
 export const claseTarjetaMovil =
@@ -406,8 +405,8 @@ export const claseTarjetaMovil =
 // Total en negro al final de una lista de tarjetas (celular).
 export function TotalMovil({ etiqueta, valor }: { etiqueta: string; valor: ReactNode }) {
   return (
-    <div className="relative isolate overflow-hidden rounded-interno bg-tinta px-4 py-3.5 text-white shadow-elevada">
-      <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-1/2 opacity-20" />
+    <div className="panel-oscuro relative isolate overflow-hidden rounded-interno px-4 py-3.5 text-white">
+      <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-1/2 opacity-70" />
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-eyebrow font-semibold uppercase tracking-[0.1em] text-plata">{etiqueta}</span>
         <span className="text-xl font-semibold tabular-nums">{valor}</span>
@@ -431,13 +430,13 @@ export function Vacio({
   return (
     <div className="flex flex-col items-center justify-center px-4 py-12 text-center sm:py-14">
       <div aria-hidden className="relative mb-4">
+        <span className="absolute -inset-8 rounded-full bg-[radial-gradient(closest-side,rgb(36_80_230/0.14),transparent)]" />
         <span className="absolute -inset-3 rounded-[22px] border border-dashed border-borde-fuerte" />
-        <span className="relative grid size-14 place-items-center rounded-2xl bg-linear-to-b from-white to-fondo-2 text-tenue shadow-tarjeta ring-1 ring-borde">
+        <span className="relative grid size-14 place-items-center rounded-2xl bg-linear-to-b from-white to-white/60 text-tenue shadow-elevada ring-1 ring-borde">
           <Icono nombre={icono} className="size-6" />
         </span>
-        <span className="franja-marca absolute -right-2 -bottom-2 h-1.5 w-7 -skew-x-12 rounded-sm" />
       </div>
-      {titulo && <p className="mt-2 font-display text-lg font-semibold tracking-tight text-tinta">{titulo}</p>}
+      {titulo && <p className="mt-2 font-display text-base font-semibold tracking-tight text-tinta">{titulo}</p>}
       <p className="mt-1 max-w-sm text-sm leading-relaxed text-tenue">{children}</p>
       {accion && <div className="mt-4">{accion}</div>}
     </div>
@@ -494,7 +493,7 @@ const acotar = (n: number) => Math.min(100, Math.max(0, Number.isFinite(n) ? n :
 
 // Cifra: se encoge en celular (2 columnas) y crece por pasos en pantallas grandes.
 const claseCifraKpi =
-  "mt-3 text-[clamp(0.9375rem,12.5cqi,1.625rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums max-sm:truncate sm:text-kpi sm:wrap-break-word sm:whitespace-normal xl:text-kpi 2xl:text-kpi-lg";
+  "mt-3 text-[clamp(0.9375rem,12.5cqi,1.625rem)] leading-tight font-semibold tracking-[-0.025em] whitespace-nowrap tabular-nums max-sm:truncate sm:text-kpi sm:wrap-break-word sm:whitespace-normal 2xl:text-kpi-lg";
 
 export function Kpi({
   etiqueta,
@@ -505,62 +504,91 @@ export function Kpi({
   tono = "neutro",
   progreso,
   retraso = 0,
-}: DatoKpi & { retraso?: number }) {
+  className = "",
+}: DatoKpi & { retraso?: number; className?: string }) {
   const estilo = { animationDelay: `${retraso}ms` };
   if (destacado) {
     return (
       <div
         title={`${etiqueta}: ${valor}`}
         style={estilo}
-        className="@container relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-tinta p-4 text-white shadow-elevada ring-1 ring-white/5 animate-entrada sm:p-5"
+        className={`panel-oscuro @container relative isolate flex min-h-40 flex-col overflow-hidden rounded-tarjeta p-4 text-white animate-entrada sm:p-6 ${className}`}
       >
-        <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-30" />
+        <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-3/4 opacity-80" />
+        {/* Brillo de cristal en la esquina */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-[radial-gradient(120%_90%_at_100%_0%,rgb(29_78_216/0.5),transparent_60%)]"
+          className="absolute -top-24 -left-16 -z-10 size-64 rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.09),transparent)]"
         />
+        {icono && (
+          <Icono
+            nombre={icono}
+            grosor={1}
+            className="pointer-events-none absolute -right-6 -bottom-8 -z-10 size-44 text-white/[0.05] max-lg:hidden"
+          />
+        )}
         <div className="flex items-start justify-between gap-2">
-          <p className="line-clamp-2 min-w-0 text-eyebrow font-semibold uppercase tracking-[0.1em] text-blue-200">
-            {etiqueta}
+          <p className="inline-flex min-w-0 items-center gap-2 rounded-full bg-white/8 py-1 pr-3 pl-2 text-eyebrow font-medium tracking-[0.06em] text-blue-100 ring-1 ring-white/10">
+            <span aria-hidden className="size-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgb(96_165_250)]" />
+            <span className="truncate">{etiqueta}</span>
           </p>
           {icono && (
-            <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-white/10 ring-1 ring-white/15 max-sm:hidden">
+            <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-white/8 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-white/10 max-sm:hidden">
               <Icono nombre={icono} className="size-4.5" />
             </span>
           )}
         </div>
-        <p className={claseCifraKpi}>{valor}</p>
-        {nota && <p className="mt-1 line-clamp-2 text-xs leading-snug text-slate-300">{nota}</p>}
-        {progreso !== undefined && (
-          <div className="mt-auto pt-3">
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
+        <div className="mt-auto pt-6">
+          <p className="bg-linear-to-b from-white to-white/70 bg-clip-text text-[clamp(1.375rem,11cqi,3.25rem)] leading-none font-semibold tracking-[-0.035em] whitespace-nowrap text-transparent tabular-nums">
+            {valor}
+          </p>
+          {nota && <p className="mt-2 line-clamp-2 text-xs leading-snug text-slate-400 sm:text-sm">{nota}</p>}
+          {progreso !== undefined && (
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full origin-left rounded-full bg-white animate-crecer-x"
+                className="h-full origin-left rounded-full bg-linear-to-r from-blue-400 to-white animate-crecer-x"
                 style={{ width: `${acotar(progreso)}%` }}
               />
             </div>
-          </div>
-        )}
-        <div className="franja-marca absolute inset-x-0 bottom-0 h-1" />
+          )}
+        </div>
+        <div aria-hidden className="franja-marca absolute inset-x-6 bottom-0 h-px opacity-80" />
       </div>
     );
   }
   const claseIcono =
     tono === "acento" || tono === "peligro" ? ICONO_TONO.acento : tono === "exito" ? ICONO_TONO.exito : ICONO_TONO.marca;
-  const barra = tono === "exito" ? "bg-exito" : tono === "acento" || tono === "peligro" ? "bg-acento" : "bg-marca";
+  const barra =
+    tono === "exito"
+      ? "bg-linear-to-r from-emerald-400 to-exito"
+      : tono === "acento" || tono === "peligro"
+        ? "bg-linear-to-r from-rose-400 to-acento"
+        : "bg-linear-to-r from-sky-400 to-marca";
+  const halo =
+    tono === "exito"
+      ? "rgb(16 185 129 / 0.14)"
+      : tono === "acento" || tono === "peligro"
+        ? "rgb(229 50 62 / 0.12)"
+        : "rgb(36 80 230 / 0.12)";
   return (
     <div
       title={`${etiqueta}: ${valor}`}
       style={estilo}
-      className="@container group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada"
+      className={`@container group relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-300 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada ${className}`}
     >
+      {/* Halo de color detrás del cristal */}
+      <div
+        aria-hidden
+        style={{ background: `radial-gradient(closest-side, ${halo}, transparent)` }}
+        className="absolute -top-16 -right-16 -z-10 size-48 rounded-full opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+      />
       <div className="flex items-start justify-between gap-2">
-        <p className="line-clamp-2 min-w-0 text-eyebrow font-semibold uppercase tracking-[0.1em] text-tenue">{etiqueta}</p>
+        <p className="line-clamp-2 min-w-0 text-[13px] leading-5 font-medium text-tenue">{etiqueta}</p>
         {icono && (
           <span
-            className={`grid size-9 shrink-0 place-items-center rounded-[10px] shadow-[inset_0_1px_0_rgb(255_255_255/0.7)] ring-1 max-sm:hidden ${claseIcono}`}
+            className={`grid size-8 shrink-0 place-items-center rounded-[9px] shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(17_24_39/0.06)] ring-1 max-sm:hidden ${claseIcono}`}
           >
-            <Icono nombre={icono} className="size-4.5" />
+            <Icono nombre={icono} className="size-4" />
           </span>
         )}
       </div>
@@ -575,8 +603,8 @@ export function Kpi({
         </p>
       )}
       {progreso !== undefined && (
-        <div className="mt-auto pt-3">
-          <div className="h-1.5 overflow-hidden rounded-full bg-fondo-2">
+        <div className="mt-auto pt-4">
+          <div className="h-1.5 overflow-hidden rounded-full bg-slate-900/[0.06]">
             <div
               className={`h-full origin-left rounded-full animate-crecer-x ${barra}`}
               style={{ width: `${acotar(progreso)}%` }}
@@ -584,19 +612,30 @@ export function Kpi({
           </div>
         </div>
       )}
-      <span
-        aria-hidden
-        className={`absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${barra}`}
-      />
     </div>
   );
 }
 
+/**
+ * Bento: la cifra destacada va primero y ocupa un bloque de 2×2 en pantallas
+ * grandes; las demás llenan el resto (la última se estira si sobra espacio).
+ */
 export function Resumen({ datos }: { datos: DatoKpi[] }) {
+  const destacado = datos.find((d) => d.destacado);
+  const resto = datos.filter((d) => d !== destacado);
+  const estirarUltimo = destacado ? resto.length % 2 === 1 : false;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-      {datos.map((d, i) => (
-        <Kpi key={d.etiqueta} {...d} retraso={i * 40} />
+    <div
+      className={`grid grid-cols-2 gap-3 sm:gap-4 ${destacado ? "lg:grid-cols-4" : "xl:grid-cols-4"}`}
+    >
+      {destacado && <Kpi {...destacado} retraso={0} className="col-span-2 lg:row-span-2" />}
+      {resto.map((d, i) => (
+        <Kpi
+          key={d.etiqueta}
+          {...d}
+          retraso={(i + 1) * 50}
+          className={estirarUltimo && i === resto.length - 1 ? "col-span-2" : ""}
+        />
       ))}
     </div>
   );

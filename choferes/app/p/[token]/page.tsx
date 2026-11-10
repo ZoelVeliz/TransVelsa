@@ -60,20 +60,20 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <Logo tamano={44} prioridad />
-            <p className="truncate font-display text-lg font-bold tracking-tight">
+            <p className="truncate font-display text-lg font-semibold tracking-tight">
               TransVelsa <span className="text-plata">Pedidos</span>
             </p>
           </div>
           <Actualizar />
         </div>
-        <h1 className="mt-6 font-display text-[2.125rem] leading-tight font-bold tracking-tight">Nuevo viaje</h1>
-        <p className="mt-0.5 text-lg text-plata-claro">TransVelsa asigna el camión y el piloto.</p>
+        <h1 className="mt-7 bg-linear-to-b from-white to-white/70 bg-clip-text font-display text-[2.375rem] leading-[1.05] font-semibold tracking-[-0.03em] text-transparent">Nuevo viaje</h1>
+        <p className="mt-1.5 text-lg text-slate-300">TransVelsa asigna el camión y el piloto.</p>
       </Cabecera>
 
       <main className="mx-auto w-full max-w-xl space-y-8 px-[max(1rem,env(safe-area-inset-left))] pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
         {listaTarifas.length === 0 ? (
           <section className="rounded-tarjeta bg-superficie px-6 py-10 text-center shadow-tarjeta ring-1 ring-borde">
-            <h2 className="font-display text-[1.625rem] leading-tight font-bold">Aún no hay destinos</h2>
+            <h2 className="font-display text-[1.625rem] leading-tight font-semibold">Aún no hay destinos</h2>
             <p className="mx-auto mt-2 max-w-xs text-base text-tenue">
               TransVelsa todavía no ha cargado los destinos. Avísales para poder enviar pedidos.
             </p>
@@ -83,10 +83,12 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
         )}
 
         <section aria-label="Pendientes de asignar" className="space-y-3">
-          <h2 className="flex items-center gap-2 px-1 font-display text-[1.375rem] font-bold tracking-tight">
-            <Icono nombre="calendario" className="size-6 text-tenue" />
+          <h2 className="flex items-center gap-2.5 px-1 font-display text-[1.375rem] font-semibold tracking-tight">
+            <span className="grid size-9 place-items-center rounded-xl bg-white/80 text-marca shadow-tarjeta ring-1 ring-borde">
+              <Icono nombre="calendario" className="size-5" />
+            </span>
             Pendientes de asignar
-            <span className="cifra ml-auto rounded-full bg-tinta px-2.5 py-0.5 font-sans text-base font-bold text-white">
+            <span className="cifra ml-auto rounded-full bg-white/80 px-2.5 py-0.5 font-sans text-base font-semibold text-tinta shadow-tarjeta ring-1 ring-borde">
               {pendientes.length}
             </span>
           </h2>
@@ -101,7 +103,7 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
                 return (
                   <li key={v.id} className="flex items-start gap-3 px-4 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <p className="font-display text-xl leading-tight font-bold break-words">{v.destino}</p>
+                      <p className="font-display text-xl leading-tight font-semibold break-words">{v.destino}</p>
                       <p className="mt-0.5 text-base text-tenue">
                         {v.producto} · Pedido <span className="cifra font-semibold text-tinta">{v.pedido}</span>
                       </p>
@@ -136,7 +138,7 @@ function Esqueleto() {
       <Cabecera>
         <div className="flex items-center gap-2.5">
           <Logo tamano={44} prioridad />
-          <p className="font-display text-lg font-bold tracking-tight">
+          <p className="font-display text-lg font-semibold tracking-tight">
             TransVelsa <span className="text-plata">Pedidos</span>
           </p>
         </div>

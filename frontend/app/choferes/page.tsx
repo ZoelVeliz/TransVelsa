@@ -217,8 +217,8 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   aria-current={actual ? "true" : undefined}
                   className={`flex min-h-11 flex-col items-center justify-center rounded-interno px-2 py-1.5 text-center text-sm leading-tight font-medium ring-1 ring-inset transition-colors sm:min-h-10 sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3.5 sm:py-0 ${
                     actual
-                      ? "bg-tinta text-white ring-tinta"
-                      : "bg-superficie text-suave ring-borde [@media(hover:hover)]:hover:bg-fondo [@media(hover:hover)]:hover:text-tinta"
+                      ? "panel-oscuro text-white ring-transparent"
+                      : "bg-superficie text-suave shadow-tarjeta ring-borde [@media(hover:hover)]:hover:bg-white [@media(hover:hover)]:hover:text-tinta"
                   }`}
                 >
                   <span className="sm:hidden">{a.corto}</span>
@@ -232,9 +232,9 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
           </nav>
 
           {liquidaciones.length > 0 && (
-            <dl className="grid grid-cols-2 overflow-hidden rounded-interno bg-fondo ring-1 ring-borde ring-inset sm:grid-cols-3">
-              <div className="relative isolate col-span-2 overflow-hidden bg-tinta px-4 py-3.5 text-white sm:col-span-1">
-                <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-1/2 opacity-20" />
+            <dl className="grid grid-cols-2 overflow-hidden rounded-interno bg-white/50 ring-1 ring-borde ring-inset sm:grid-cols-3">
+              <div className="panel-oscuro relative isolate col-span-2 overflow-hidden px-4 py-3.5 text-white sm:col-span-1">
+                <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-70" />
                 <dt className="text-eyebrow font-semibold uppercase tracking-[0.1em] text-plata">
                   Líquido a pagar
                 </dt>
@@ -242,7 +242,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
                   {totalLiquido < 0 ? "−" : ""}
                   {formatoQ(Math.abs(totalLiquido))}
                 </dd>
-                <span aria-hidden className="franja-marca absolute inset-x-0 bottom-0 h-0.5" />
+                <span aria-hidden className="franja-marca absolute inset-x-4 bottom-0 h-px" />
               </div>
               <div className="px-4 py-3.5">
                 <dt className="text-eyebrow font-semibold uppercase tracking-[0.1em] text-tenue">Entregados</dt>
@@ -718,12 +718,8 @@ function Recibo({
 
   return (
     <article className="flex flex-col overflow-hidden rounded-interno bg-superficie shadow-tarjeta ring-1 ring-borde transition-shadow duration-200 [@media(hover:hover)]:hover:shadow-elevada">
-      <header className="relative isolate flex items-center gap-3 overflow-hidden bg-tinta px-4 py-3.5 text-white">
-        <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-1/2 opacity-25" />
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 bg-[radial-gradient(90%_120%_at_100%_0%,rgb(29_78_216/0.35),transparent_60%)]"
-        />
+      <header className="panel-oscuro relative isolate flex items-center gap-3 overflow-hidden px-4 py-3.5 text-white">
+        <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-70" />
         <Avatar nombre={piloto.nombre} oscuro />
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-lg leading-tight font-semibold tracking-tight">{piloto.nombre}</h3>
@@ -733,7 +729,7 @@ function Recibo({
             {rango}
           </p>
         </div>
-        <div aria-hidden className="franja-marca absolute inset-x-0 bottom-0 h-[3px]" />
+        <div aria-hidden className="franja-marca absolute inset-x-0 bottom-0 h-px" />
       </header>
 
       <div className="px-4 pt-3.5 pb-3">
@@ -791,13 +787,13 @@ function Recibo({
 
       {/* Corte de recibo: muescas laterales y línea perforada. */}
       <div aria-hidden className="relative mt-auto h-4">
-        <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-superficie shadow-[inset_-1px_0_0_var(--color-borde)]" />
-        <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-superficie shadow-[inset_1px_0_0_var(--color-borde)]" />
+        <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-fondo shadow-[inset_-1px_0_0_var(--color-borde)]" />
+        <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-fondo shadow-[inset_1px_0_0_var(--color-borde)]" />
         <span className="absolute inset-x-3 top-1/2 border-t-2 border-dashed border-borde" />
       </div>
 
       <div
-        className={`relative isolate mx-3 mb-3 overflow-hidden rounded-control px-4 py-3 text-white ${negativo ? "bg-linear-to-br from-acento-oscuro to-red-900" : "bg-linear-to-br from-marca to-marca-oscuro"} shadow-boton`}
+        className={`relative isolate mx-3 mb-3 overflow-hidden rounded-control px-4 py-3 text-white ${negativo ? "bg-linear-to-br from-acento to-red-900" : "bg-linear-to-br from-blue-500 via-marca to-indigo-800"} shadow-boton`}
       >
         <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-1/3 opacity-15" />
         <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">

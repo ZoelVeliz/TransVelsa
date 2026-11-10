@@ -84,13 +84,13 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <Logo tamano={44} prioridad />
-            <p className="truncate font-display text-lg font-bold tracking-tight">
+            <p className="truncate font-display text-lg font-semibold tracking-tight">
               TransVelsa <span className="text-plata">Choferes</span>
             </p>
           </div>
           <Actualizar />
         </div>
-        <h1 className="mt-6 font-display text-[2.125rem] leading-tight font-bold tracking-tight">
+        <h1 className="mt-7 bg-linear-to-b from-white to-white/70 bg-clip-text font-display text-[2.375rem] leading-[1.05] font-semibold tracking-[-0.03em] text-transparent">
           Hola, {nombre}
         </h1>
         <p className="mt-0.5 text-lg text-plata-claro first-letter:uppercase">{fechaLarga(hoy)}</p>
@@ -118,11 +118,12 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
         )}
 
         {enRuta.length === 0 && proximos.length === 0 && (
-          <section className="rounded-tarjeta bg-superficie px-6 py-10 text-center shadow-tarjeta ring-1 ring-borde animate-entrada">
-            <span className="mx-auto grid size-16 place-items-center rounded-full bg-marca-50 text-marca ring-1 ring-marca/15">
+          <section className="relative isolate overflow-hidden rounded-tarjeta bg-superficie px-6 py-10 text-center shadow-tarjeta ring-1 ring-borde animate-entrada">
+            <div aria-hidden className="absolute -top-24 left-1/2 -z-10 size-72 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(36_80_230/0.14),transparent)]" />
+            <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-linear-to-b from-white to-marca-50 text-marca shadow-elevada ring-1 ring-marca/15">
               <Icono nombre="camion" className="size-8" />
             </span>
-            <h2 className="mt-4 font-display text-[1.625rem] leading-tight font-bold">
+            <h2 className="mt-4 font-display text-[1.625rem] leading-tight font-semibold">
               No tienes viajes asignados
             </h2>
             <p className="mx-auto mt-2 max-w-xs text-base leading-relaxed text-tenue">
@@ -148,7 +149,7 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
 
 function Resumen({ n, uno, varios }: { n: number; uno: string; varios: string }) {
   return (
-    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/10 px-3.5 ring-1 ring-white/15">
+    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-white/10 backdrop-blur-md">
       <span className="cifra text-lg font-bold text-white">{n}</span>
       <span className="text-plata-claro">{n === 1 ? uno : varios}</span>
     </span>
@@ -168,10 +169,12 @@ function Seccion({
 }) {
   return (
     <section aria-label={titulo} className="space-y-3 animate-entrada">
-      <h2 className="flex items-center gap-2 px-1 font-display text-[1.375rem] font-bold tracking-tight">
-        <Icono nombre={icono} className="size-6 text-tenue" />
+      <h2 className="flex items-center gap-2.5 px-1 font-display text-[1.375rem] font-semibold tracking-tight">
+        <span className="grid size-9 place-items-center rounded-xl bg-white/80 text-marca shadow-tarjeta ring-1 ring-borde">
+          <Icono nombre={icono} className="size-5" />
+        </span>
         {titulo}
-        <span className="cifra ml-auto rounded-full bg-tinta px-2.5 py-0.5 font-sans text-base font-bold text-white">
+        <span className="cifra ml-auto rounded-full bg-white/80 px-2.5 py-0.5 font-sans text-base font-semibold text-tinta shadow-tarjeta ring-1 ring-borde">
           {n}
         </span>
       </h2>
@@ -185,7 +188,7 @@ function FilaEntregado({ viaje, hoy }: { viaje: Viaje; hoy: string }) {
   return (
     <li className="flex items-start gap-3 px-4 py-3.5">
       <div className="min-w-0 flex-1">
-        <p className="font-display text-xl leading-tight font-bold break-words">{viaje.destino}</p>
+        <p className="font-display text-xl leading-tight font-semibold break-words">{viaje.destino}</p>
         <p className="mt-0.5 text-base text-tenue">
           {viaje.producto} · Pedido <span className="cifra font-semibold text-tinta">{viaje.pedido}</span>
         </p>
@@ -214,7 +217,7 @@ function Esqueleto() {
       <Cabecera>
         <div className="flex items-center gap-2.5">
           <Logo tamano={44} prioridad />
-          <p className="font-display text-lg font-bold tracking-tight">
+          <p className="font-display text-lg font-semibold tracking-tight">
             TransVelsa <span className="text-plata">Choferes</span>
           </p>
         </div>

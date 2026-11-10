@@ -6,7 +6,7 @@ import { useAvisar } from "./avisos";
 import { Icono } from "./iconos";
 
 const claseCampo =
-  "min-h-14 w-full rounded-control border border-borde-fuerte bg-white px-4 text-lg text-tinta focus:border-marca focus:outline-none focus:ring-4 focus:ring-marca/15";
+  "min-h-14 w-full rounded-control border border-borde-fuerte bg-white/90 px-4 text-lg text-tinta shadow-[inset_0_1px_2px_rgb(17_24_39/0.05)] transition-[border-color,box-shadow] focus:border-marca focus:bg-white focus:outline-none focus:ring-4 focus:ring-marca/15";
 
 /** Alta de un viaje sin camión ni piloto. Solo se limpia si se guardó bien. */
 export function FormularioPedido({
@@ -44,7 +44,7 @@ export function FormularioPedido({
         const datos = new FormData(e.currentTarget);
         startTransition(() => enviar(datos));
       }}
-      className="space-y-4 rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde"
+      className="relative isolate space-y-4 overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-elevada ring-1 ring-borde sm:p-5"
     >
       <Campo etiqueta="Número de pedido">
         <input name="pedido" required maxLength={60} autoComplete="off" className={`${claseCampo} cifra`} />
@@ -73,7 +73,7 @@ export function FormularioPedido({
       {estado.error && !pendiente && (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-control bg-peligro-claro px-4 py-3 text-base font-medium text-peligro ring-1 ring-peligro/25 ring-inset"
+          className="flex items-start gap-2 rounded-control bg-peligro-claro/80 px-4 py-3 text-base font-medium text-peligro ring-1 ring-peligro/25 ring-inset"
         >
           <Icono nombre="alerta" className="mt-0.5 size-5 shrink-0" />
           {estado.error}
@@ -82,7 +82,7 @@ export function FormularioPedido({
 
       <button
         disabled={pendiente}
-        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-control bg-marca px-5 text-lg font-bold text-white active:bg-marca-oscuro disabled:opacity-80"
+        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-control bg-marca bg-linear-to-b from-white/20 to-transparent px-5 text-lg font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_12px_28px_-10px_rgb(36_80_230/0.8)] transition-transform active:scale-[0.99] active:bg-marca-oscuro disabled:opacity-80"
       >
         <Icono nombre={pendiente ? "cargando" : "check"} className={`size-6 ${pendiente ? "animate-spin" : ""}`} />
         {pendiente ? "Enviando…" : "Enviar pedido"}
@@ -94,7 +94,7 @@ export function FormularioPedido({
 function Campo({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <label className="block min-w-0 space-y-1.5">
-      <span className="block text-base font-semibold text-tenue">{etiqueta}</span>
+      <span className="block text-[0.9375rem] font-medium text-tenue">{etiqueta}</span>
       {children}
     </label>
   );

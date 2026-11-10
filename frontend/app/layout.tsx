@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Semi_Condensed, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { EncabezadoMovil, NavegacionMovil, Sidebar } from "@/components/navegacion";
 import "./globals.css";
 
@@ -13,15 +13,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Solo para títulos; las cifras van siempre en Geist con tabular-nums.
-const barlow = Barlow_Semi_Condensed({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "TransVelsa",
   description: "Planificación de viajes, gastos y liquidación de pilotos",
@@ -29,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#07080c",
   viewportFit: "cover",
 };
 
@@ -38,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="fondo-pagina min-h-full text-tinta">
         <a
@@ -53,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main
             id="contenido"
             tabIndex={-1}
-            className="mx-auto w-full max-w-[1440px] flex-1 space-y-6 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 md:pt-8 md:pb-12 lg:px-8 xl:px-10"
+            className="mx-auto w-full max-w-[1440px] flex-1 space-y-6 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 md:pt-10 md:pb-14 lg:px-10 xl:px-12"
           >
             {children}
           </main>

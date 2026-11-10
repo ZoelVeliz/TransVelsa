@@ -129,25 +129,25 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     <>
       {/* Total y Caja chica ocupan dos columnas: con 4 personas más no queda ninguna tarjeta sola. */}
       <section aria-label="Saldos por cuenta" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="relative isolate col-span-2 flex flex-col overflow-hidden rounded-tarjeta bg-tinta p-4 text-white shadow-elevada ring-1 ring-white/5 sm:p-5">
-          <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-30" />
+        <div className="panel-oscuro relative isolate col-span-2 flex flex-col overflow-hidden rounded-tarjeta p-4 text-white animate-entrada sm:p-6">
+          <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-3/4 opacity-80" />
           <div
             aria-hidden
-            className="absolute inset-0 -z-10 bg-[radial-gradient(120%_90%_at_100%_0%,rgb(29_78_216/0.5),transparent_60%)]"
+            className="absolute -top-24 -left-16 -z-10 size-64 rounded-full bg-[radial-gradient(closest-side,rgb(255_255_255/0.09),transparent)]"
           />
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-eyebrow font-semibold uppercase tracking-[0.1em] text-blue-200">Total en cuentas</p>
+              <p className="text-[13px] font-medium text-blue-100">Total en cuentas</p>
               <p className="mt-0.5 text-xs text-slate-300">Suma de las {CUENTAS.length} cuentas</p>
             </div>
-            <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-white/10 ring-1 ring-white/15">
+            <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-white/8 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-white/10">
               <Icono nombre="billetera" className="size-4.5" />
             </span>
           </div>
-          <p className="mt-3 mb-4 text-[clamp(1.75rem,8vw,2.25rem)] leading-tight font-semibold tracking-tight tabular-nums">
+          <p className="mt-auto pt-6 pb-4 text-[clamp(1.75rem,8vw,3rem)] leading-none font-semibold tracking-[-0.035em] tabular-nums">
             <Saldo valor={totalGeneral} className={totalGeneral < 0 ? "text-red-300!" : ""} />
           </p>
-          <dl className="mt-auto grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-xs">
+          <dl className="grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-xs">
             <div className="min-w-0">
               <dt className="text-slate-300">Entró</dt>
               <dd className="mt-0.5 truncate text-sm font-semibold tabular-nums text-green-300">
@@ -161,7 +161,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
               </dd>
             </div>
           </dl>
-          <div className="franja-marca absolute inset-x-0 bottom-0 h-1" />
+          <div className="franja-marca absolute inset-x-6 bottom-0 h-px" />
         </div>
         {[...saldos]
           .sort((a, b) => Number(b.cuenta === CAJA) - Number(a.cuenta === CAJA))
@@ -489,9 +489,9 @@ function TarjetaCuenta({
       scroll={false}
       aria-current={activa ? "true" : undefined}
       aria-label={`${cuenta}: saldo ${saldo < 0 ? "−" : ""}${formatoQ(Math.abs(saldo))}. ${activa ? "Ver todas las cuentas" : `Ver solo ${cuenta}`}`}
-      className={`${caja ? "col-span-2" : ""} group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-marca-50/50 aria-[current=true]:ring-2 aria-[current=true]:ring-marca sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada`}
+      className={`${caja ? "col-span-2" : ""} group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-white/90 aria-[current=true]:ring-2 aria-[current=true]:ring-marca sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada`}
     >
-      <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${estilo.clase}`} />
+      <span aria-hidden className={`absolute inset-x-5 top-0 h-0.5 rounded-b-full ${estilo.clase}`} />
       <div className="flex items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-2 text-eyebrow font-semibold uppercase tracking-[0.1em] text-tenue">
           <span aria-hidden className={`size-2.5 shrink-0 rounded-sm ring-1 ring-black/10 ${estilo.clase}`} />

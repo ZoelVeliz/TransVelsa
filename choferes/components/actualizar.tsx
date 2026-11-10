@@ -46,7 +46,7 @@ export function Actualizar() {
         startTransition(() => router.refresh());
       }}
       disabled={pendiente}
-      className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-white/10 px-4 text-base font-semibold text-white ring-1 ring-white/20 transition-colors active:bg-white/20 disabled:opacity-80"
+      className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-white/[0.08] px-4 text-base font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.14)] ring-1 ring-white/15 backdrop-blur-md transition-colors active:bg-white/20 disabled:opacity-80"
     >
       <Icono nombre="actualizar" className={`size-5 ${pendiente ? "animate-spin" : ""}`} />
       {pendiente ? "Actualizando…" : "Actualizar"}

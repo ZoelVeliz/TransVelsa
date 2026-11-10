@@ -1,18 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Semi_Condensed, Geist } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-// Solo para títulos y el destino de cada viaje.
-const barlow = Barlow_Semi_Condensed({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -30,13 +22,13 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#000000",
+  themeColor: "#07080c",
   colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${barlow.variable} h-full antialiased`}>
+    <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

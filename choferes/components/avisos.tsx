@@ -36,7 +36,7 @@ export function ProveedorAvisos({ children }: { children: ReactNode }) {
         {aviso && (
           <p
             key={aviso.n}
-            className="flex items-center gap-2.5 rounded-full bg-cabina px-5 py-3.5 text-base font-semibold text-white shadow-elevada ring-1 ring-white/10 animate-entrada"
+            className="vidrio-oscuro flex items-center gap-2.5 rounded-full px-5 py-3.5 text-base font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.1),0_20px_40px_-12px_rgb(0_0_0/0.5)] ring-1 ring-white/10 animate-entrada"
           >
             <Icono nombre="checkCirculo" className="size-6 text-green-400" />
             {aviso.texto}

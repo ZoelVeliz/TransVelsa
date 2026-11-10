@@ -38,7 +38,7 @@ function AvisoError({ mensaje, alCerrar }: { mensaje: string; alCerrar: () => vo
   return (
     <div
       role="alert"
-      className="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex items-start gap-2.5 rounded-control bg-tinta py-2.5 pr-1.5 pl-3.5 text-left text-sm font-medium whitespace-normal text-white shadow-elevada ring-1 ring-white/10 animate-aparecer md:right-6 md:bottom-6 md:left-auto md:w-96"
+      className="fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 flex items-start gap-2.5 rounded-control bg-tinta py-2.5 pr-1.5 pl-3.5 text-left text-sm font-medium whitespace-normal text-white shadow-elevada ring-1 ring-white/10 animate-aparecer md:right-6 md:bottom-6 md:left-auto md:w-96"
     >
       <Icono nombre="alerta" className="mt-0.5 size-4 shrink-0 text-red-300" />
       <span className="min-w-0 flex-1 py-px">{mensaje}</span>
