@@ -4,25 +4,28 @@ import { io } from "next/cache";
 import { Suspense, type ReactNode } from "react";
 import { Actualizar } from "@/components/actualizar";
 import { ProveedorAvisos } from "@/components/avisos";
-import { PillEstatus } from "@/components/estatus";
 import { Icono } from "@/components/iconos";
 import { Cabecera, Logo, PantallaAviso } from "@/components/marca";
 import { TarjetaViaje, type Viaje } from "@/components/tarjeta-viaje";
-import { pilotoPorToken, tokenConFormato } from "@/lib/choferes";
+import { pilotoPorToken } from "@/lib/choferes";
 import { camiones, db, viajes } from "@/lib/db";
 import { etiquetaDia, fechaLarga, formatoFecha, hoyISO, sumarDias } from "@/lib/fechas";
 
+// Metadatos fijos (no leen el token). Leer `params` en generateMetadata hacía
+// que Next 16 (Cache Components) no pudiera armar el shell estático de esta
+// ruta en desarrollo ("did not produce a static shell"). El manifest personal,
+// que sí necesita el token, lo pone <ManifestChofer> dentro de la parte
+// dinámica; React 19 lo sube solo al <head>.
+export const metadata: Metadata = {
+  title: "Mis viajes · TransVelsa",
+  appleWebApp: { capable: true, title: "TransVelsa", statusBarStyle: "black-translucent" },
+};
+
 // El manifest va por chofer: su start_url lleva el token. En iPhone la app de
 // pantalla de inicio no comparte cookies con Safari, así que el enlace mismo
-// es la "sesión". Solo se lee la URL, sin tocar la base.
-export async function generateMetadata({ params }: PageProps<"/c/[token]">): Promise<Metadata> {
-  const { token } = await params;
-  if (!tokenConFormato(token)) return { title: "Enlace no válido · TransVelsa" };
-  return {
-    title: "Mis viajes · TransVelsa",
-    manifest: `/c/${token}/manifest.webmanifest`,
-    appleWebApp: { capable: true, title: "TransVelsa", statusBarStyle: "black-translucent" },
-  };
+// es la "sesión".
+function ManifestChofer({ token }: { token: string }) {
+  return <link rel="manifest" href={`/c/${token}/manifest.webmanifest`} />;
 }
 
 export default function PaginaChofer({ params }: PageProps<"/c/[token]">) {
@@ -80,6 +83,7 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
 
   return (
     <ProveedorAvisos>
+      <ManifestChofer token={token} />
       <Cabecera>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -94,10 +98,11 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
           Hola, {nombre}
         </h1>
         <p className="mt-0.5 text-lg text-plata-claro first-letter:uppercase">{fechaLarga(hoy)}</p>
-        <p className="mt-3 flex flex-wrap gap-2 text-base font-semibold">
-          <Resumen n={enRuta.length} uno="en ruta" varios="en ruta" />
-          <Resumen n={proximos.length} uno="próximo" varios="próximos" />
-        </p>
+        <dl className="mt-5 grid grid-cols-3 gap-2">
+          <Resumen n={enRuta.length} etiqueta="En ruta" icono="camion" destacado={enRuta.length > 0} />
+          <Resumen n={proximos.length} etiqueta={proximos.length === 1 ? "Próximo" : "Próximos"} icono="calendario" />
+          <Resumen n={entregados.length} etiqueta="Entregados" icono="checkCirculo" />
+        </dl>
       </Cabecera>
 
       <main className="mx-auto w-full max-w-xl space-y-8 px-[max(1rem,env(safe-area-inset-left))] pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
@@ -134,11 +139,11 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
 
         {entregados.length > 0 && (
           <Seccion titulo="Entregados recientemente" icono="checkCirculo" n={entregados.length}>
-            <ul className="divide-y divide-borde overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde">
-              {entregados.map((v) => (
-                <FilaEntregado key={v.id} viaje={v} hoy={hoy} />
+            <ol className="relative overflow-hidden rounded-tarjeta bg-superficie px-4 py-2 shadow-tarjeta ring-1 ring-borde">
+              {entregados.map((v, i) => (
+                <FilaEntregado key={v.id} viaje={v} hoy={hoy} ultimo={i === entregados.length - 1} />
               ))}
-            </ul>
+            </ol>
             <p className="px-1 text-base text-tenue">Últimos {DIAS_ENTREGADOS} días. Solo para consulta.</p>
           </Seccion>
         )}
@@ -147,12 +152,33 @@ async function Inicio({ params }: { params: PageProps<"/c/[token]">["params"] })
   );
 }
 
-function Resumen({ n, uno, varios }: { n: number; uno: string; varios: string }) {
+/** Mosaico de la cabecera: cuántos viajes hay en cada estado. */
+function Resumen({
+  n,
+  etiqueta,
+  icono,
+  destacado,
+}: {
+  n: number;
+  etiqueta: string;
+  icono: "camion" | "calendario" | "checkCirculo";
+  destacado?: boolean;
+}) {
   return (
-    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-white/10 backdrop-blur-md">
-      <span className="cifra text-lg font-bold text-white">{n}</span>
-      <span className="text-plata-claro">{n === 1 ? uno : varios}</span>
-    </span>
+    <div
+      className={`relative overflow-hidden rounded-2xl px-3 pt-2.5 pb-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 backdrop-blur-md ${
+        destacado ? "bg-amber-400/15 ring-amber-300/40" : "bg-white/[0.07] ring-white/10"
+      }`}
+    >
+      <dt className="flex items-center gap-1.5 text-sm font-medium text-slate-300">
+        <Icono nombre={icono} className={`size-4 ${destacado ? "text-amber-300" : "text-blue-300"}`} />
+        {etiqueta}
+      </dt>
+      <dd className="cifra mt-1 text-[1.75rem] leading-none font-semibold tracking-tight text-white">{n}</dd>
+      {destacado && (
+        <span aria-hidden className="absolute top-2.5 right-2.5 size-2 rounded-full bg-amber-300 shadow-[0_0_10px_rgb(252_211_77)] motion-safe:animate-pulse" />
+      )}
+    </div>
   );
 }
 
@@ -168,7 +194,7 @@ function Seccion({
   children: ReactNode;
 }) {
   return (
-    <section aria-label={titulo} className="space-y-3 animate-entrada">
+    <section aria-label={titulo} className="revelar space-y-3">
       <h2 className="flex items-center gap-2.5 px-1 font-display text-[1.375rem] font-semibold tracking-tight">
         <span className="grid size-9 place-items-center rounded-xl bg-white/80 text-marca shadow-tarjeta ring-1 ring-borde">
           <Icono nombre={icono} className="size-5" />
@@ -183,10 +209,15 @@ function Seccion({
   );
 }
 
-function FilaEntregado({ viaje, hoy }: { viaje: Viaje; hoy: string }) {
+/** Entregado reciente, como punto de una línea de tiempo. */
+function FilaEntregado({ viaje, hoy, ultimo }: { viaje: Viaje; hoy: string; ultimo: boolean }) {
   const etiqueta = etiquetaDia(viaje.fecha, hoy);
   return (
-    <li className="flex items-start gap-3 px-4 py-3.5">
+    <li className="relative flex items-start gap-3 py-3">
+      {!ultimo && <span aria-hidden className="absolute top-12 bottom-0 left-4 w-px bg-borde-fuerte" />}
+      <span aria-hidden className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-exito-claro text-exito-oscuro ring-1 ring-exito/25">
+        <Icono nombre="check" className="size-4" strokeWidth={2.6} />
+      </span>
       <div className="min-w-0 flex-1">
         <p className="font-display text-xl leading-tight font-semibold break-words">{viaje.destino}</p>
         <p className="mt-0.5 text-base text-tenue">
@@ -197,7 +228,6 @@ function FilaEntregado({ viaje, hoy }: { viaje: Viaje; hoy: string }) {
           {formatoFecha(viaje.fecha)} · {viaje.placa}
         </p>
       </div>
-      <PillEstatus estatus={viaje.estatus} />
     </li>
   );
 }
@@ -223,7 +253,11 @@ function Esqueleto() {
         </div>
         <div className="mt-6 h-10 w-52 rounded-lg bg-white/10" />
         <div className="mt-2 h-6 w-40 rounded-lg bg-white/10" />
-        <div className="mt-3 h-9 w-56 rounded-full bg-white/10" />
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[4.75rem] rounded-2xl bg-white/[0.07] ring-1 ring-white/10" />
+          ))}
+        </div>
       </Cabecera>
       <div className="mx-auto w-full max-w-xl space-y-4 px-4 pt-6">
         <div className="esqueleto h-7 w-44 rounded-lg" />

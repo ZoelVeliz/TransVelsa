@@ -9,7 +9,7 @@ import { FormularioPedido } from "@/components/formulario-pedido";
 import { Icono } from "@/components/iconos";
 import { Cabecera, Logo, PantallaAviso } from "@/components/marca";
 import { db, tarifas, viajes } from "@/lib/db";
-import { etiquetaDia, formatoFecha, hoyISO } from "@/lib/fechas";
+import { diaYMes, etiquetaDia, hoyISO } from "@/lib/fechas";
 import { tokenPedidosValido } from "@/lib/pedidos";
 import { crearPedido } from "./acciones";
 
@@ -67,7 +67,24 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
           <Actualizar />
         </div>
         <h1 className="mt-7 bg-linear-to-b from-white to-white/70 bg-clip-text font-display text-[2.375rem] leading-[1.05] font-semibold tracking-[-0.03em] text-transparent">Nuevo viaje</h1>
-        <p className="mt-1.5 text-lg text-slate-300">TransVelsa asigna el camión y el piloto.</p>
+        <p className="mt-1.5 text-lg text-slate-300">Tú envías el pedido; TransVelsa asigna el camión y el piloto.</p>
+        <ol aria-label="Cómo funciona" className="mt-5 grid grid-cols-3 gap-2 text-sm">
+          {[
+            { n: 1, t: "Envías el pedido" },
+            { n: 2, t: "La oficina asigna" },
+            { n: 3, t: "Sale el camión" },
+          ].map((p) => (
+            <li
+              key={p.n}
+              className="rounded-2xl bg-white/[0.07] px-3 pt-2.5 pb-3 font-medium text-slate-200 shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] ring-1 ring-white/10 backdrop-blur-md"
+            >
+              <span className="cifra grid size-6 place-items-center rounded-full bg-blue-500/25 text-xs font-semibold text-blue-200 ring-1 ring-blue-300/30">
+                {p.n}
+              </span>
+              <span className="mt-1.5 block leading-snug">{p.t}</span>
+            </li>
+          ))}
+        </ol>
       </Cabecera>
 
       <main className="mx-auto w-full max-w-xl space-y-8 px-[max(1rem,env(safe-area-inset-left))] pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
@@ -82,7 +99,7 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
           <FormularioPedido accion={crearPedido.bind(null, token)} tarifas={listaTarifas} hoy={hoy} />
         )}
 
-        <section aria-label="Pendientes de asignar" className="space-y-3">
+        <section aria-label="Pendientes de asignar" className="revelar space-y-3">
           <h2 className="flex items-center gap-2.5 px-1 font-display text-[1.375rem] font-semibold tracking-tight">
             <span className="grid size-9 place-items-center rounded-xl bg-white/80 text-marca shadow-tarjeta ring-1 ring-borde">
               <Icono nombre="calendario" className="size-5" />
@@ -97,22 +114,33 @@ async function Inicio({ params }: { params: PageProps<"/p/[token]">["params"] })
               No hay pedidos esperando. Cuando TransVelsa asigna un viaje, sale de esta lista.
             </p>
           ) : (
-            <ul className="divide-y divide-borde overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde">
+            <ul className="space-y-2.5">
               {pendientes.map((v) => {
                 const etiqueta = etiquetaDia(v.fecha, hoy);
+                const { dia, mes } = diaYMes(v.fecha);
                 return (
-                  <li key={v.id} className="flex items-start gap-3 px-4 py-3.5">
+                  <li
+                    key={v.id}
+                    className="revelar flex items-start gap-3.5 rounded-tarjeta bg-superficie p-3.5 shadow-tarjeta ring-1 ring-borde"
+                  >
+                    {/* Bloque de calendario con la fecha del viaje */}
+                    <div className="w-14 shrink-0 overflow-hidden rounded-xl bg-white text-center shadow-[0_1px_2px_rgb(17_24_39/0.06)] ring-1 ring-borde">
+                      <p className="bg-marca py-0.5 text-xs font-semibold tracking-wide text-white uppercase">{mes}</p>
+                      <p className="cifra py-1 text-[1.5rem] leading-tight font-semibold text-tinta">{dia}</p>
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-xl leading-tight font-semibold break-words">{v.destino}</p>
                       <p className="mt-0.5 text-base text-tenue">
                         {v.producto} · Pedido <span className="cifra font-semibold text-tinta">{v.pedido}</span>
                       </p>
-                      <p className="cifra text-base text-tenue">
-                        {etiqueta ? `${etiqueta}, ` : ""}
-                        {formatoFecha(v.fecha)} · Planta {v.planta}
+                      <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-tenue">
+                        {etiqueta && (
+                          <span className="rounded-md bg-tinta px-1.5 py-0.5 text-xs font-semibold text-white">{etiqueta}</span>
+                        )}
+                        Planta {v.planta}
+                        <PillEstatus estatus="Por asignar" />
                       </p>
                     </div>
-                    <PillEstatus estatus="Por asignar" />
                   </li>
                 );
               })}

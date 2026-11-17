@@ -186,3 +186,42 @@ body::before {
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
   animation: var(--animate-brillo);
 }
+
+/* ---- Microinteracciones ---- */
+
+/* Camión de un viaje En ruta: vaivén leve sobre la línea (quieto si se pide menos movimiento). */
+@media (prefers-reduced-motion: no-preference) {
+  .camion-en-ruta {
+    animation: vaiven 2.4s ease-in-out infinite;
+  }
+}
+@keyframes vaiven {
+  50% {
+    margin-left: 6px;
+  }
+}
+
+/* Aparición suave al entrar en pantalla al desplazarse (sin JS). */
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .revelar {
+      animation: revelar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* Botones grandes: se hunden un poco al tocarlos. */
+.presionable {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.presionable:active:not(:disabled) {
+  transform: scale(0.985) translateY(1px);
+}

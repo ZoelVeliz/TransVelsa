@@ -314,3 +314,88 @@ select:not([multiple]):not(.bg-none) {
     }
   }
 }
+
+/* ---- Microinteracciones ---- */
+
+/* Brillo que sigue al cursor (posición la pone components/destello.tsx).
+   Debajo del contenido gracias a isolation + z-index negativo del pseudo. */
+[data-destello] {
+  isolation: isolate;
+}
+[data-destello]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    420px circle at var(--dx, 50%) var(--dy, 50%),
+    rgb(36 80 230 / 0.1),
+    transparent 45%
+  );
+}
+.panel-oscuro[data-destello]::after {
+  background: radial-gradient(420px circle at var(--dx, 50%) var(--dy, 50%), rgb(255 255 255 / 0.08), transparent 45%);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-destello]:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Aparición suave al entrar en pantalla al desplazarse (sin JS). Donde el
+   navegador no lo soporta, o con movimiento reducido, se ve normal. */
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .revelar {
+      animation: revelar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* Paleta de comandos: fondo difuminado. */
+.paleta::backdrop {
+  background: rgb(11 13 18 / 0.35);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Login: camión que recorre la ruta (decorativo; quieto con movimiento reducido). */
+.ruta-camion {
+  left: 50%;
+  translate: -50% 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ruta-camion {
+    animation: recorrer 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+}
+@keyframes recorrer {
+  0% {
+    left: 0%;
+    translate: 0 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    translate: -100% 0;
+    opacity: 0;
+  }
+}

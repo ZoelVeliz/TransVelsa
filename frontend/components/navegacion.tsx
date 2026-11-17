@@ -3,15 +3,24 @@
 import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { cerrarSesion } from "@/app/login/acciones";
+import { abrirComandos } from "./eventos";
 import { Icono, type NombreIcono } from "./iconos";
 
-const enlaces: { href: string; texto: string; corto: string; icono: NombreIcono }[] = [
+export const enlaces: { href: string; texto: string; corto: string; icono: NombreIcono }[] = [
   { href: "/viajes", texto: "Viajes", corto: "Viajes", icono: "camion" },
   { href: "/choferes", texto: "Tarifario y choferes", corto: "Choferes", icono: "usuarios" },
   { href: "/gastos", texto: "Diésel y gastos", corto: "Gastos", icono: "bomba" },
   { href: "/movimientos", texto: "Caja y cuentas", corto: "Caja", icono: "billetera" },
   { href: "/reportes", texto: "Reportes", corto: "Reportes", icono: "grafica" },
 ];
+
+export const enlaceUsuarios: (typeof enlaces)[number] = {
+  href: "/usuarios",
+  texto: "Usuarios",
+  corto: "Usuarios",
+  icono: "usuario",
+};
 
 // Pista fija (sin saltos de layout) mientras carga la sección elegida.
 function PistaCarga({ className }: { className: string }) {
@@ -24,7 +33,33 @@ function PistaCarga({ className }: { className: string }) {
   );
 }
 
-const activoEn = (ruta: string, href: string) => ruta === href || ruta.startsWith(`${href}/`);
+export const activoEn = (ruta: string, href: string) => ruta === href || ruta.startsWith(`${href}/`);
+
+// Enlace de la barra lateral (riel de íconos en md, menú completo en lg).
+function EnlaceLateral({ e, activo }: { e: (typeof enlaces)[number]; activo: boolean }) {
+  return (
+    <Link
+      href={e.href}
+      aria-current={activo ? "page" : undefined}
+      title={e.texto}
+      className="group relative flex items-center rounded-[10px] font-medium text-slate-400 transition-colors duration-150 hover:bg-white/[0.05] hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset aria-[current=page]:bg-white/[0.07] aria-[current=page]:text-white aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.07),0_1px_2px_rgb(0_0_0/0.4)] aria-[current=page]:ring-1 aria-[current=page]:ring-white/[0.08] aria-[current=page]:ring-inset md:h-16 md:flex-col md:justify-center md:gap-1 md:px-1 md:text-[10px] lg:h-10 lg:flex-row lg:justify-start lg:gap-3 lg:px-2.5 lg:text-[13.5px]"
+    >
+      {activo && (
+        <span aria-hidden className="absolute top-3 bottom-3 -left-3 w-0.5 rounded-r-full bg-blue-400 shadow-[0_0_12px_rgb(96_165_250/0.9)]" />
+      )}
+      <span className="grid size-8 place-items-center rounded-lg transition-colors group-aria-[current=page]:bg-linear-to-b group-aria-[current=page]:from-blue-500 group-aria-[current=page]:to-marca group-aria-[current=page]:text-white group-aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_4px_14px_-4px_rgb(36_80_230/0.9)] lg:size-6.5 lg:rounded-md">
+        <Icono nombre={e.icono} className="size-[18px] lg:size-[15px]" />
+      </span>
+      <span className="lg:hidden">{e.corto}</span>
+      <span className="hidden lg:inline">{e.texto}</span>
+      <Icono
+        nombre="chevronDer"
+        className="ml-auto hidden size-4 text-slate-600 opacity-0 transition group-hover:opacity-100 group-aria-[current=page]:opacity-0 lg:block"
+      />
+      <PistaCarga className="inset-x-3 bottom-1 h-0.5" />
+    </Link>
+  );
+}
 
 // Cabina lateral: riel de íconos en md, menú completo en lg.
 export function Sidebar() {
@@ -52,32 +87,15 @@ export function Sidebar() {
         Operación
       </p>
       <nav aria-label="Principal" className="mt-4 flex flex-col gap-1 px-3 lg:mt-0">
-        {enlaces.map((e) => {
-          const activo = activoEn(ruta, e.href);
-          return (
-            <Link
-              key={e.href}
-              href={e.href}
-              aria-current={activo ? "page" : undefined}
-              title={e.texto}
-              className="group relative flex items-center rounded-[10px] font-medium text-slate-400 transition-colors duration-150 hover:bg-white/[0.05] hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset aria-[current=page]:bg-white/[0.07] aria-[current=page]:text-white aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.07),0_1px_2px_rgb(0_0_0/0.4)] aria-[current=page]:ring-1 aria-[current=page]:ring-white/[0.08] aria-[current=page]:ring-inset md:h-16 md:flex-col md:justify-center md:gap-1 md:px-1 md:text-[10px] lg:h-10 lg:flex-row lg:justify-start lg:gap-3 lg:px-2.5 lg:text-[13.5px]"
-            >
-              {activo && (
-                <span aria-hidden className="absolute top-3 bottom-3 -left-3 w-0.5 rounded-r-full bg-blue-400 shadow-[0_0_12px_rgb(96_165_250/0.9)]" />
-              )}
-              <span className="grid size-8 place-items-center rounded-lg transition-colors group-aria-[current=page]:bg-linear-to-b group-aria-[current=page]:from-blue-500 group-aria-[current=page]:to-marca group-aria-[current=page]:text-white group-aria-[current=page]:shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_4px_14px_-4px_rgb(36_80_230/0.9)] lg:size-6.5 lg:rounded-md">
-                <Icono nombre={e.icono} className="size-[18px] lg:size-[15px]" />
-              </span>
-              <span className="lg:hidden">{e.corto}</span>
-              <span className="hidden lg:inline">{e.texto}</span>
-              <Icono
-                nombre="chevronDer"
-                className="ml-auto hidden size-4 text-slate-600 opacity-0 transition group-hover:opacity-100 group-aria-[current=page]:opacity-0 lg:block"
-              />
-              <PistaCarga className="inset-x-3 bottom-1 h-0.5" />
-            </Link>
-          );
-        })}
+        {enlaces.map((e) => (
+          <EnlaceLateral key={e.href} e={e} activo={activoEn(ruta, e.href)} />
+        ))}
+      </nav>
+      <p className="hidden px-6 pt-6 pb-2 text-eyebrow font-medium uppercase tracking-[0.14em] text-slate-500 lg:block">
+        Cuenta
+      </p>
+      <nav aria-label="Cuenta" className="mt-1 flex flex-col gap-1 border-t border-white/[0.06] px-3 pt-1 max-lg:mx-3 max-lg:px-0 lg:mt-0 lg:border-0 lg:pt-0">
+        <EnlaceLateral e={enlaceUsuarios} activo={activoEn(ruta, enlaceUsuarios.href)} />
       </nav>
       <div className="mt-auto p-3">
         <div className="relative isolate overflow-hidden rounded-2xl bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] ring-1 ring-white/[0.07] md:flex md:justify-center lg:block lg:p-3.5">
@@ -94,6 +112,15 @@ export function Sidebar() {
             <p className="mt-0.5 text-xs leading-snug text-slate-400">Transporte de carga · Guatemala</p>
           </div>
         </div>
+        <form action={cerrarSesion} className="mt-2">
+          <button
+            title="Cerrar sesión"
+            className="flex w-full items-center justify-center gap-2.5 rounded-[10px] text-[13px] font-medium text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 md:h-11 lg:h-9 lg:justify-start lg:px-2.5"
+          >
+            <Icono nombre="salir" className="size-4 shrink-0" />
+            <span className="max-lg:sr-only">Cerrar sesión</span>
+          </button>
+        </form>
       </div>
     </aside>
   );
@@ -105,7 +132,7 @@ export const Navegacion = Sidebar;
 // Encabezado compacto tipo app (solo celular): logo + sección actual.
 export function EncabezadoMovil() {
   const ruta = usePathname();
-  const actual = enlaces.find((e) => activoEn(ruta, e.href));
+  const actual = [...enlaces, enlaceUsuarios].find((e) => activoEn(ruta, e.href));
   return (
     <header className="vidrio-oscuro sticky top-0 z-20 border-b border-white/[0.06] pt-[env(safe-area-inset-top)] md:hidden">
       <div className="flex h-14 items-center gap-3 px-4">
@@ -134,6 +161,30 @@ export function EncabezadoMovil() {
             </p>
           </>
         )}
+        <button
+          type="button"
+          onClick={abrirComandos}
+          aria-label="Buscar sección o acción"
+          className="ml-auto grid size-11 shrink-0 place-items-center rounded-xl text-slate-400 transition-colors active:bg-white/10 active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        >
+          <Icono nombre="buscar" className="size-5" />
+        </button>
+        <Link
+          href="/usuarios"
+          aria-label="Usuarios y mi cuenta"
+          aria-current={activoEn(ruta, "/usuarios") ? "page" : undefined}
+          className="grid size-11 shrink-0 place-items-center rounded-xl text-slate-400 transition-colors active:bg-white/10 active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 aria-[current=page]:text-blue-400"
+        >
+          <Icono nombre="usuario" className="size-5" />
+        </Link>
+        <form action={cerrarSesion} className="shrink-0">
+          <button
+            aria-label="Cerrar sesión"
+            className="-mr-2 grid size-11 place-items-center rounded-xl text-slate-400 transition-colors active:bg-white/10 active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          >
+            <Icono nombre="salir" className="size-5" />
+          </button>
+        </form>
       </div>
       <div className="franja-marca h-px opacity-80" />
     </header>

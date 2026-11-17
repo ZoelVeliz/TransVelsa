@@ -85,7 +85,7 @@ export function Tarjeta({
   id?: string;
 }) {
   return (
-    <section id={id} className="overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde animate-entrada">
+    <section id={id} className="revelar overflow-hidden rounded-tarjeta bg-superficie shadow-tarjeta ring-1 ring-borde">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-borde px-4 py-3.5 sm:px-5 sm:py-4">
         <div className="flex min-w-0 flex-1 items-center gap-x-3">
           {icono ? (
@@ -512,6 +512,7 @@ export function Kpi({
       <div
         title={`${etiqueta}: ${valor}`}
         style={estilo}
+        data-destello
         className={`panel-oscuro @container relative isolate flex min-h-40 flex-col overflow-hidden rounded-tarjeta p-4 text-white animate-entrada sm:p-6 ${className}`}
       >
         <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-3/4 opacity-80" />
@@ -574,7 +575,8 @@ export function Kpi({
     <div
       title={`${etiqueta}: ${valor}`}
       style={estilo}
-      className={`@container group relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-300 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada ${className}`}
+      data-destello
+      className={`@container group relative isolate flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,translate] duration-300 animate-entrada sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada ${className}`}
     >
       {/* Halo de color detrás del cristal */}
       <div

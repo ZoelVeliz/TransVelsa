@@ -129,7 +129,7 @@ async function Contenido({ searchParams }: { searchParams: Promise<Params> }) {
     <>
       {/* Total y Caja chica ocupan dos columnas: con 4 personas más no queda ninguna tarjeta sola. */}
       <section aria-label="Saldos por cuenta" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="panel-oscuro relative isolate col-span-2 flex flex-col overflow-hidden rounded-tarjeta p-4 text-white animate-entrada sm:p-6">
+        <div data-destello className="panel-oscuro relative isolate col-span-2 flex flex-col overflow-hidden rounded-tarjeta p-4 text-white animate-entrada sm:p-6">
           <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-3/4 opacity-80" />
           <div
             aria-hidden
@@ -489,7 +489,8 @@ function TarjetaCuenta({
       scroll={false}
       aria-current={activa ? "true" : undefined}
       aria-label={`${cuenta}: saldo ${saldo < 0 ? "−" : ""}${formatoQ(Math.abs(saldo))}. ${activa ? "Ver todas las cuentas" : `Ver solo ${cuenta}`}`}
-      className={`${caja ? "col-span-2" : ""} group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-white/90 aria-[current=true]:ring-2 aria-[current=true]:ring-marca sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada`}
+      data-destello
+      className={`${caja ? "col-span-2" : ""} group relative flex flex-col overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-tarjeta ring-1 ring-borde transition-[box-shadow,translate] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca aria-[current=true]:bg-white/90 aria-[current=true]:ring-2 aria-[current=true]:ring-marca sm:p-5 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada`}
     >
       <span aria-hidden className={`absolute inset-x-5 top-0 h-0.5 rounded-b-full ${estilo.clase}`} />
       <div className="flex items-center justify-between gap-2">

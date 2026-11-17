@@ -717,7 +717,10 @@ function Recibo({
     );
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-interno bg-superficie shadow-tarjeta ring-1 ring-borde transition-shadow duration-200 [@media(hover:hover)]:hover:shadow-elevada">
+    <article
+      data-destello
+      className="revelar relative flex flex-col overflow-hidden rounded-interno bg-superficie shadow-tarjeta ring-1 ring-borde transition-[box-shadow,translate] duration-300 [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:shadow-elevada"
+    >
       <header className="panel-oscuro relative isolate flex items-center gap-3 overflow-hidden px-4 py-3.5 text-white">
         <div aria-hidden className="franjas-diagonales absolute inset-y-0 right-0 -z-10 w-2/3 opacity-70" />
         <Avatar nombre={piloto.nombre} oscuro />

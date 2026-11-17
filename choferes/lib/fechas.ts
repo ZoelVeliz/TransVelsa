@@ -28,6 +28,12 @@ export function fechaLarga(iso: string) {
   return `${DIAS[dia]} ${d} de ${MESES[m - 1]}`;
 }
 
+// "2026-11-09" -> { dia: "9", mes: "nov" } para bloques tipo calendario.
+export function diaYMes(iso: string) {
+  const [, m, d] = iso.split("-").map(Number);
+  return { dia: String(d), mes: MESES[m - 1].slice(0, 3) };
+}
+
 // Etiqueta corta relativa a hoy: "Hoy", "Mañana", "Ayer" o null.
 export function etiquetaDia(iso: string, hoy: string) {
   if (iso === hoy) return "Hoy";

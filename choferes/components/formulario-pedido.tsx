@@ -46,6 +46,16 @@ export function FormularioPedido({
       }}
       className="relative isolate space-y-4 overflow-hidden rounded-tarjeta bg-superficie p-4 shadow-elevada ring-1 ring-borde sm:p-5"
     >
+      <div aria-hidden className="absolute -top-24 -right-20 -z-10 size-64 rounded-full bg-[radial-gradient(closest-side,rgb(36_80_230/0.12),transparent)]" />
+      <div className="flex items-center gap-3 border-b border-borde pb-4">
+        <span className="grid size-10 place-items-center rounded-xl bg-linear-to-b from-blue-500 to-marca text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_8px_18px_-8px_rgb(36_80_230/0.8)]">
+          <Icono nombre="paquete" className="size-5" />
+        </span>
+        <div>
+          <h2 className="font-display text-xl leading-tight font-semibold">Datos del pedido</h2>
+          <p className="text-sm text-tenue">Todos los campos son obligatorios</p>
+        </div>
+      </div>
       <Campo etiqueta="Número de pedido">
         <input name="pedido" required maxLength={60} autoComplete="off" className={`${claseCampo} cifra`} />
       </Campo>
@@ -82,7 +92,7 @@ export function FormularioPedido({
 
       <button
         disabled={pendiente}
-        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-control bg-marca bg-linear-to-b from-white/20 to-transparent px-5 text-lg font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_12px_28px_-10px_rgb(36_80_230/0.8)] transition-transform active:scale-[0.99] active:bg-marca-oscuro disabled:opacity-80"
+        className="presionable inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-control bg-marca bg-linear-to-b from-white/20 to-transparent px-5 text-lg font-bold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_12px_28px_-10px_rgb(36_80_230/0.8)] active:bg-marca-oscuro disabled:opacity-80"
       >
         <Icono nombre={pendiente ? "cargando" : "check"} className={`size-6 ${pendiente ? "animate-spin" : ""}`} />
         {pendiente ? "Enviando…" : "Enviar pedido"}

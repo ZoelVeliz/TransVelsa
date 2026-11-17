@@ -7,6 +7,7 @@ import {
   pgTable,
   serial,
   text,
+  index,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
@@ -131,3 +132,38 @@ export const movimientosCaja = pgTable("movimientos_caja", {
   descripcion: text("descripcion").notNull(),
   creadoEn: timestamp("creado_en").notNull().defaultNow(),
 });
+
+// ---- Acceso al panel de oficina ----
+
+// Cuentas de la oficina. Solo un administrador las crea (no hay registro libre).
+// La contraseña nunca se guarda: solo su hash scrypt (ver lib/contrasenas.ts).
+export const usuarios = pgTable("usuarios", {
+  id: serial("id").primaryKey(),
+  // Nombre de usuario para entrar, siempre en minúsculas.
+  usuario: text("usuario").notNull().unique(),
+  nombre: text("nombre").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  esAdmin: boolean("es_admin").notNull().default(false),
+  activo: boolean("activo").notNull().default(true),
+  // Freno contra adivinar contraseñas: tras varios fallos seguidos se bloquea un rato.
+  intentosFallidos: integer("intentos_fallidos").notNull().default(0),
+  bloqueadoHasta: timestamp("bloqueado_hasta"),
+  ultimoAcceso: timestamp("ultimo_acceso"),
+  creadoEn: timestamp("creado_en").notNull().defaultNow(),
+});
+
+// Sesiones abiertas. La cookie lleva un token aleatorio; aquí solo su SHA-256,
+// así que quien lea la base no puede usarlas. Borrar la fila cierra la sesión.
+export const sesiones = pgTable(
+  "sesiones",
+  {
+    id: serial("id").primaryKey(),
+    tokenHash: text("token_hash").notNull().unique(),
+    usuarioId: integer("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+    vence: timestamp("vence").notNull(),
+    creadoEn: timestamp("creado_en").notNull().defaultNow(),
+  },
+  (t) => [index("sesiones_usuario_id_idx").on(t.usuarioId)],
+);

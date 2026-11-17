@@ -21,6 +21,7 @@ import {
   viajes,
 } from "./db";
 import { anioSemana } from "./formato";
+import { exigirSesion, SinSesion } from "./sesion";
 
 export type Estado = { error?: string; ok?: boolean };
 
@@ -53,9 +54,10 @@ class ErrorCampo extends Error {}
 // Envuelve una mutación para devolver errores al formulario en vez de romper la página.
 async function ejecutar(fn: () => Promise<unknown>): Promise<Estado> {
   try {
+    await exigirSesion();
     await fn();
   } catch (e) {
-    if (e instanceof ErrorCampo) return { error: e.message };
+    if (e instanceof ErrorCampo || e instanceof SinSesion) return { error: e.message };
     const msg = String((e as { cause?: { message?: string } }).cause?.message ?? e);
     if (msg.includes("duplicate key")) return { error: "Ese registro ya existe" };
     if (msg.includes("foreign key"))
@@ -114,6 +116,7 @@ export async function asignarViaje(id: number, _: Estado, form: FormData) {
 // diga "desde la app" por un cambio que hizo la oficina.
 // Un viaje sin piloto no cambia de estatus aquí: primero se asigna (asignarViaje).
 export async function cambiarEstatusViaje(id: number, estatus: string) {
+  await exigirSesion();
   if (!ESTATUS_ASIGNADO.includes(estatus as never)) return;
   await db
     .update(viajes)
@@ -127,6 +130,7 @@ export async function cambiarEstatusViaje(id: number, estatus: string) {
 }
 
 export async function borrarViaje(id: number) {
+  await exigirSesion();
   await db.delete(viajes).where(eq(viajes.id, id));
   refresh();
 }
@@ -155,6 +159,7 @@ export async function crearGasto(_: Estado, form: FormData) {
 }
 
 export async function borrarGasto(id: number) {
+  await exigirSesion();
   await db.delete(gastos).where(eq(gastos.id, id));
   refresh();
 }
@@ -173,6 +178,7 @@ export async function crearTarifa(_: Estado, form: FormData) {
 }
 
 export async function actualizarMontoTarifa(id: number, monto: number) {
+  await exigirSesion();
   if (!Number.isFinite(monto) || monto < 0) return;
   await db.update(tarifas).set({ monto }).where(eq(tarifas.id, id));
   refresh();
@@ -180,12 +186,14 @@ export async function actualizarMontoTarifa(id: number, monto: number) {
 
 // Igual que el flete: solo afecta a los viajes que se registren después.
 export async function actualizarPagoChoferTarifa(id: number, pagoChofer: number) {
+  await exigirSesion();
   if (!Number.isFinite(pagoChofer) || pagoChofer < 0) return;
   await db.update(tarifas).set({ pagoChofer }).where(eq(tarifas.id, id));
   refresh();
 }
 
 export async function borrarTarifa(id: number) {
+  await exigirSesion();
   await db.delete(tarifas).where(eq(tarifas.id, id));
   refresh();
 }
@@ -203,6 +211,7 @@ export async function crearPiloto(_: Estado, form: FormData) {
 // Enlace personal a la app de choferes (/c/<token>). Crear uno nuevo
 // reemplaza el anterior, que deja de funcionar.
 export async function generarEnlaceChofer(pilotoId: number) {
+  await exigirSesion();
   if (!Number.isInteger(pilotoId)) return;
   await db
     .update(pilotos)
@@ -212,6 +221,7 @@ export async function generarEnlaceChofer(pilotoId: number) {
 }
 
 export async function quitarEnlaceChofer(pilotoId: number) {
+  await exigirSesion();
   if (!Number.isInteger(pilotoId)) return;
   await db.update(pilotos).set({ token: null }).where(eq(pilotos.id, pilotoId));
   refresh();
@@ -238,6 +248,7 @@ export async function crearMovimiento(_: Estado, form: FormData) {
 }
 
 export async function borrarMovimiento(id: number) {
+  await exigirSesion();
   await db.delete(movimientosPiloto).where(eq(movimientosPiloto.id, id));
   refresh();
 }
@@ -271,6 +282,7 @@ export async function crearMovimientoCaja(_: Estado, form: FormData) {
 }
 
 export async function borrarMovimientoCaja(id: number) {
+  await exigirSesion();
   await db.delete(movimientosCaja).where(eq(movimientosCaja.id, id));
   refresh();
 }

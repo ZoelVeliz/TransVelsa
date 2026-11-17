@@ -114,6 +114,8 @@ export function TarjetaViaje({
           {viaje.producto}
         </p>
 
+        <RutaViaje planta={viaje.planta} destino={viaje.destino} estatus={estatus} />
+
         <dl className="mt-4 grid grid-cols-3 divide-x divide-borde rounded-2xl bg-white/70 shadow-[inset_0_1px_0_white] ring-1 ring-borde">
           <Dato titulo="Pedido" valor={viaje.pedido} />
           <Dato titulo="Planta" valor={viaje.planta} />
@@ -248,7 +250,7 @@ function BotonGrande({
       onClick={onClick}
       disabled={pendiente}
       aria-busy={pendiente}
-      className={`mt-5 inline-flex min-h-15 w-full items-center justify-center gap-2.5 rounded-control bg-linear-to-b from-white/20 to-transparent px-5 text-xl font-bold text-white transition-[transform,background-color] active:scale-[0.99] disabled:opacity-75 ${color}`}
+      className={`presionable mt-5 inline-flex min-h-15 w-full items-center justify-center gap-2.5 rounded-control bg-linear-to-b from-white/20 to-transparent px-5 text-xl font-bold text-white disabled:opacity-75 ${color}`}
     >
       {pendiente ? (
         <>
@@ -262,5 +264,52 @@ function BotonGrande({
         </>
       )}
     </button>
+  );
+}
+
+/**
+ * Ruta planta → destino. Programado: el camión espera en la planta; En ruta:
+ * va a medio camino (con un leve vaivén); Entregado: llegó. Decorativo: el
+ * texto de la tarjeta ya dice el estatus.
+ */
+function RutaViaje({ planta, destino, estatus }: { planta: string; destino: string; estatus: EstatusViaje }) {
+  const enCamino = estatus === "En ruta";
+  const llego = estatus === "Entregado";
+  const avance = llego ? "100%" : enCamino ? "52%" : "0%";
+  return (
+    <div aria-hidden className="mt-4 rounded-2xl bg-white/60 px-3.5 py-3 ring-1 ring-borde">
+      <div className="flex items-center gap-2">
+        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-marca-50 ring-1 ring-marca/30">
+          <span className="size-2 rounded-full bg-marca" />
+        </span>
+        <div className="relative h-8 flex-1">
+          <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[repeating-linear-gradient(90deg,rgb(17_24_39/0.14)_0_6px,transparent_6px_11px)]" />
+          <div
+            style={{ width: avance }}
+            className={`absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full ${llego ? "bg-exito" : "bg-linear-to-r from-marca to-amber-500"}`}
+          />
+          {/* Al inicio y al final el camión queda dentro de la línea, no a medias fuera. */}
+          <span
+            style={{ left: avance, translate: `${llego ? "-100%" : enCamino ? "-50%" : "0%"} -50%` }}
+            className={`absolute top-1/2 grid size-8 place-items-center rounded-full bg-tinta text-white shadow-[0_6px_14px_-6px_rgb(7_8_12/0.8)] ring-2 ring-white ${
+              enCamino ? "camion-en-ruta" : ""
+            }`}
+          >
+            <Icono nombre="camion" className="size-4" />
+          </span>
+        </div>
+        <span
+          className={`grid size-6 shrink-0 place-items-center rounded-full ring-1 ${
+            llego ? "bg-exito text-white ring-exito" : "bg-white text-tenue ring-borde-fuerte"
+          }`}
+        >
+          <Icono nombre={llego ? "check" : "ubicacion"} className="size-3.5" strokeWidth={2.4} />
+        </span>
+      </div>
+      <div className="mt-1 flex justify-between gap-3 text-sm font-medium text-tenue">
+        <span className="truncate">Planta {planta}</span>
+        <span className="truncate text-right text-tinta">{destino}</span>
+      </div>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import type { NextRequest } from "next/server";
 import { RESPONSABLES } from "@/lib/constantes";
 import { obtenerDetalle, obtenerReporte, resolverPeriodo } from "@/lib/reporte";
+import { exigirSesion, SinSesion } from "@/lib/sesion";
 
 // Colores de la marca en formato ARGB de Excel.
 const NEGRO = "FF0A0D14";
@@ -140,6 +141,12 @@ function titulo(hoja: ExcelJS.Worksheet, texto: string, subtitulo: string, colum
 }
 
 export async function GET(request: NextRequest) {
+  try {
+    await exigirSesion();
+  } catch (e) {
+    if (e instanceof SinSesion) return new Response("Sesión vencida", { status: 401 });
+    throw e;
+  }
   const sp = Object.fromEntries(request.nextUrl.searchParams);
   const { periodo } = await resolverPeriodo(sp);
   const [reporte, detalle] = await Promise.all([
